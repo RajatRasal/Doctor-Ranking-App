@@ -9,7 +9,7 @@ from sqlalchemy.engine.url import URL
 def _create_engine_wrapper(url):
     return create_engine(url)
 
-def get_db_connection(drivername='postgres',
+def get_db_connection(drivername='postgresql',
                       database=os.environ['PGDATABASE'],
                       port=os.environ['PGPORT'],
                       username=os.environ['PGUSER'],
