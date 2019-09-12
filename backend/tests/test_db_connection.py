@@ -12,7 +12,6 @@ class TestDatabaseConnection:
         """
         Setup postgres connection environment variables.
         """
-        print('SETUP METHOD ###################')
         self.db = 'test_db'
         self.port = '1234' 
         self.user = 'test_user' 
