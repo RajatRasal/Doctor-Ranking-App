@@ -69,8 +69,15 @@ class TestPostgresCRUD:
     def test_no_col_given_for_create_new_table_return_false(self):
         """
         No action is performed if we attempt to create a table with no columns. 
+        There should be no changes to the database schema.
         """
-        assert False 
+        table = create_table_if_not_exists('test_table', self.conn)
+
+        inspector = inspect(self.conn)
+        table_names = inspector.get_table_names()
+
+        assert table == None
+        assert 'test_table' not in table_names
 
 
     def NOT_test_drop_table_if_exists_and_return_true(self):

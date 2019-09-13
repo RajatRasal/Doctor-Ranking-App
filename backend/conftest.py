@@ -32,5 +32,4 @@ def test_db_metadata():
     """
     Test fixture for metadata for test database instance.
     """
-    from src.model.db_connection import get_db_connection
     return MetaData(_get_test_db_conn())
