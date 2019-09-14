@@ -8,24 +8,43 @@ from sqlalchemy import MetaData, Table, Integer, String, Column, ForeignKey, \
 
 from db_connection import get_db_connection
 
-def create_table_if_not_exists(name, db_conn, *cols):
-    """
-    Create a new table using the inputted connection engine and columns, given
-    that a table of the same name does not already exist.
-    """
-    # Exit if no columns given
-    if not cols or not db_conn:
-        return None
+class PostgresDatabase:  # (DatabaseMixin):
 
-    # Reflect db connetion to get existing schema from database
-    meta = MetaData(db_conn)
-    meta.reflect()
+    def __init__(self, db_conn):
+        self.db_conn = db_conn
+        self.tablenames = []
+        
+    def create_table_if_not_exists(self, name, *cols):
+        """
+        Create a new table using the inputted connection engine and columns, given
+        that a table of the same name does not already exist.
+        """
+        # Exit if inputs are empty
+        if not (cols and self.db_conn):
+            return None
+    
+        # Reflect db connetion to get existing schema from database
+        meta = MetaData(self.db_conn)
+        meta.reflect()
 
-    try:
-        table = Table(name, meta, *cols)
-        table.create(db_conn, checkfirst=True)
-        return table
-    except sqlalchemy.exc.InvalidRequestError:
+        # Create tables if they do not exist
+        try:
+            table = Table(name, meta, *cols)
+            table.create(self.db_conn, checkfirst=True)
+            self.tablenames.append(name)
+            return table
+        except sqlalchemy.exc.InvalidRequestError:
+            return None
+
+    def insert_unique_records_to_table(self, tablename, records):
+        """
+        """
+        # Exit if inputs are empty
+        if not (tablename and records):
+            return None
+
+        # 
+
         return None
 
 def insert_unique_records_to_table(table, db_conn, records):
@@ -34,6 +53,10 @@ def insert_unique_records_to_table(table, db_conn, records):
     return True
 
 if __name__ == "__main__":
+    import os
+    import pandas as pd
+
+    """
     engine = get_db_connection()
 
     # Drop all tables if they exist
@@ -67,3 +90,13 @@ if __name__ == "__main__":
 
     inspector = inspect(engine.connect())
     print(f'New tables: {inspector.get_table_names()}')
+    """
+
+    backend_src_dir = os.path.dirname(os.path.abspath(__file__))
+    data = f'{backend_src_dir}/../../tests/parameter_weight_test_data.csv'
+    params_weights_df = pd.read_csv(data, skiprows=[0],
+                                    index_col='Disease Name',
+                                    usecols=range(17))
+    params_weights_df.dropna(inplace=True)
+    print(params_weights_df.to_dict('record'))
+    # print(params_weights_df.head())
