@@ -3,15 +3,16 @@ Tests for functions which connect to database and create, retrieve, update and
 delete from the database.
 """
 import mock
+import pandas as pd
 import pytest
-from sqlalchemy import MetaData, Column, Integer, Table, inspect
+from sqlalchemy import MetaData, Column, Integer, String, Table, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import select
 
 from src.model.tables import PostgresDatabase, insert_unique_records_to_table
 # create_table_if_not_exists, \
 
-class TestPostgresCreateTables:
+class TestPostgresCreate:
 
     @pytest.fixture(autouse=True)
     def setup_savepoint(self, request, test_db_conn):
@@ -83,27 +84,99 @@ class TestPostgresCreateTables:
         assert table == None
         assert 'test_table' not in table_names
 
-    def DONOT_test_no_records_given_for_inserting_returns_false(self):
+class TestPostgresInsert:
+
+    @pytest.fixture(autouse=True)
+    def setup_savepoint(self, request, test_db_conn):
+        """ 
+        Drops all tables in test db instance.
+        """
+        print('SETUP')
+        self.engine = test_db_conn
+        self.conn = self.engine.connect()
+        self.trans = self.conn.begin()
+        self.database = PostgresDatabase(self.conn)
+        self.database.create_table_if_not_exists('test_table',
+            Column('id', Integer), Column('name', String))
+        self.metadata = MetaData(self.database.db_conn)
+        print('YIELD TO:', request.function.__name__)
+        yield 
+        self.trans.rollback()
+        print('TEARDOWN')
+
+    @pytest.mark.parametrize('tablename,df,expected', [
+        ('test_table', pd.DataFrame(), False),
+        ('', pd.DataFrame([['x']]), False),
+        ('test_table', pd.DataFrame([['x']]), True)
+    ])
+    def test_insert_record_input_validation(self, tablename, df, expected):
         """
         No action is performed when no records are input to be inserted into the
         table and False is returned.
         """
+        res = self.database._PostgresDatabase__insert_validation(tablename, df)
+        assert res == expected
+
+    @mock.patch('src.model.tables.PostgresDatabase._PostgresDatabase__insert_validation')
+    @mock.patch('src.model.tables.PostgresDatabase._PostgresDatabase__insert_helper')
+    @pytest.mark.parametrize('valid, helper, expected', [
+        (True, True, True),
+        (False, True, False),
+        (True, False, False),
+        (False, False, False)
+    ])
+    def test_no_action_when_no_tablename_is_given_for_inserting(self,
+                                                                patch_helper,
+                                                                patch_validation,
+                                                                valid,
+                                                                helper,
+                                                                expected):
+        """
+        Behaviour of insert into table function.
+        """
+        patch_helper.return_value = valid
+        patch_validation.return_value = helper
+        res = self.database.insert_unique_records_to_table('test_tbl',
+                                                           pd.DataFrame())
+
+        assert patch_validation.call_count == 1
+        assert patch_helper.call_count == int(valid)
+
+        assert res == expected
+
+    def test__insert_into_table(self):
+        records = [(1, 'name1'), (2, 'name2')]
         tablename = 'test_table'
-        table = create_table_if_not_exists(tablename, self.conn,
-            Column('test_id', Integer))
+        df = pd.DataFrame(records, columns=['id', 'name']) 
+        data = df.to_dict('records')
 
-        res = insert_unique_records_to_table(tablename, self.conn, [])
+        res = self.database._PostgresDatabase__insert_helper(tablename, data)
 
-        query_res = self.session.execute(table.select())
+        self.metadata.reflect()
 
-        assert not list(query_res)
-        assert res == False 
+        table = self.database.meta.tables[tablename]
+        select_all = list(self.database.db_conn.execute(select([table])))
 
-    def DONOT_test_no_action_when_no_tablename_is_given_for_inserting(self):
+        assert select_all == records
+        assert res == True
+
+    def test_insert_into_table_if_not_exists_fails(self, tablename, record):
+        return res == False
+
+    def test_insert_into_table_fails_if_entering_same_row_twice(self):
         """
-        No action is performed when there is no tablename given for inserting
-        unique records into.
         """
-        res = insert_unique_records_to_table('', self.conn, [['x']])
+        records = [(1, 'name1'), (2, 'name2')]
+        tablename = 'test_table'
+        df = pd.DataFrame(records, columns=['id', 'name']) 
+        data = df.to_dict('records')
+
+        self.database._PostgresDatabase__insert_helper(tablename, data)
+        res = self.database._PostgresDatabase__insert_helper(tablename, data)
+
+        self.metadata.reflect()
+        table = self.database.meta.tables[tablename]
+        select_all = list(self.database.db_conn.execute(select([table])))
+        print(select_all)
+
         assert not res
-

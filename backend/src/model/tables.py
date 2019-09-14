@@ -12,40 +12,54 @@ class PostgresDatabase:  # (DatabaseMixin):
 
     def __init__(self, db_conn):
         self.db_conn = db_conn
-        self.tablenames = []
+        self.meta = MetaData(self.db_conn)
         
     def create_table_if_not_exists(self, name, *cols):
         """
-        Create a new table using the inputted connection engine and columns, given
-        that a table of the same name does not already exist.
+        Create a new table using the inputted connection engine and columns,
+        given that a table of the same name does not already exist.
         """
-        # Exit if inputs are empty
         if not (cols and self.db_conn):
             return None
     
         # Reflect db connetion to get existing schema from database
-        meta = MetaData(self.db_conn)
-        meta.reflect()
+        # self.meta = MetaData(self.db_conn)
+        self.meta.reflect()
 
-        # Create tables if they do not exist
         try:
-            table = Table(name, meta, *cols)
+            table = Table(name, self.meta, *cols)
             table.create(self.db_conn, checkfirst=True)
-            self.tablenames.append(name)
+            # self.tablenames.append(name)
             return table
         except sqlalchemy.exc.InvalidRequestError:
             return None
 
+    def __insert_validation(self, tablename, records):
+        self.meta.reflect()
+
+        if not(bool(tablename) and (not records.empty)):
+            return False
+
+        if tablename not in self.meta.tables:
+            return False
+
+    def __insert_helper(self, tablename, records):
+        self.meta.reflect()
+
+        try:
+            # get_or_create(tablename, records)
+            table = self.meta.tables[tablename]
+            self.db_conn.execute(table.insert().values(records))
+            return True
+        except Exception as e:
+            return False
+
     def insert_unique_records_to_table(self, tablename, records):
         """
         """
-        # Exit if inputs are empty
-        if not (tablename and records):
-            return None
+        return False if not self.__insert_validation(tablename, records) else \
+            self.__insert_helper(tablename, records)
 
-        # 
-
-        return None
 
 def insert_unique_records_to_table(table, db_conn, records):
     if not (table and db_conn and records):
