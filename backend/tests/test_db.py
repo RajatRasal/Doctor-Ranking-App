@@ -107,18 +107,4 @@ class TestPostgresCRUD:
         unique records into.
         """
         res = insert_unique_records_to_table('', self.conn, [['x']])
-
         assert not res
-
-
-    def NOT_test_drop_table_if_exists_and_return_true(self):
-        """
-        Drops table from db if it exists.
-        """
-        assert True
-
-    def NOT_test_table_not_deleted_if_not_exists_and_return_false(self):
-        """
-        No action is performed if we attempt to drop a non-existent table. 
-        """
-        assert True

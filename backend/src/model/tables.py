@@ -28,12 +28,6 @@ def create_table_if_not_exists(name, db_conn, *cols):
     except sqlalchemy.exc.InvalidRequestError:
         return None
 
-def drop_table_if_exists(name, db_conn):
-    if not (name and db_conn):
-        return False
-
-    return True
-
 def insert_unique_records_to_table(table, db_conn, records):
     if not (table and db_conn and records):
         return False
@@ -43,6 +37,16 @@ if __name__ == "__main__":
     engine = get_db_connection()
 
     # Drop all tables if they exist
+    meta = MetaData(engine)
+    meta.reflect()
+
+    for tbl in reversed(meta.sorted_tables):
+        engine.execute(tbl.delete())
+
+    meta.drop_all()
+
+    inspector = inspect(engine.connect())
+    print(f'Start tables: {inspector.get_table_names()}')
 
     # Create diseases table
     diseases = create_table_if_not_exists('diseases', engine,
@@ -62,4 +66,4 @@ if __name__ == "__main__":
         Column('importance', Integer, CheckConstraint('importance >= 0 and importance <= 5'), nullable=False))
 
     inspector = inspect(engine.connect())
-    print(f'Existing tables: {inspector.get_table_names()}')
+    print(f'New tables: {inspector.get_table_names()}')
