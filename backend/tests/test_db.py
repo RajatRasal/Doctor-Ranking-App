@@ -9,7 +9,7 @@ from sqlalchemy import MetaData, Column, Integer, String, Table, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import select
 
-from src.model.tables import PostgresDatabase, insert_unique_records_to_table
+from src.model.tables import PostgresDatabase  # insert_unique_records_to_table
 # create_table_if_not_exists, \
 
 class TestPostgresCreate:
@@ -105,9 +105,9 @@ class TestPostgresInsert:
         print('TEARDOWN')
 
     @pytest.mark.parametrize('tablename,df,expected', [
-        ('test_table', pd.DataFrame(), False),
-        ('', pd.DataFrame([['x']]), False),
-        ('test_table', pd.DataFrame([['x']]), True)
+        ('test_table', [], False),
+        ('', [{'x': 'x'}], False),
+        ('test_table', [{'x': 'x'}], True)
     ])
     def test_insert_record_input_validation(self, tablename, df, expected):
         """
@@ -189,3 +189,6 @@ class TestPostgresInsert:
         print(select_all)
 
         assert select_all == records
+
+    def test_insert_into_table_fails_if_entering_duplicates(self):
+        assert False

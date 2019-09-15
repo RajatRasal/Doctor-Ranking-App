@@ -14,6 +14,7 @@ class PostgresDatabase:  # (DatabaseMixin):
     def __init__(self, db_conn):
         self.db_conn = db_conn
         self.meta = MetaData(self.db_conn)
+        self.session = Session(self.db_conn)
         
     def create_table_if_not_exists(self, name, *cols):
         """
@@ -38,23 +39,28 @@ class PostgresDatabase:  # (DatabaseMixin):
     def __insert_validation(self, tablename, records):
         self.meta.reflect()
 
-        if not(bool(tablename) and (not records.empty)):
+        if not (bool(tablename) and records):
             return False
 
         if tablename not in self.meta.tables:
             return False
+
+        return True 
 
     def __insert_helper(self, tablename, records):
         self.meta.reflect()
 
         try:
             table = self.meta.tables[tablename]
-            session = Session(self.db_conn)
 
             for record in records:
-                res = session.query(table).filter_by(**record).first()
+                print(record, end=' - ')
+                res = self.session.query(table).filter_by(**record).first()
                 if not res:
+                    print('inserted')
                     self.db_conn.execute(table.insert().values(record))
+                else:
+                    print('not inserted')
 
             return True
         except Exception as e:
@@ -67,18 +73,20 @@ class PostgresDatabase:  # (DatabaseMixin):
         return False if not self.__insert_validation(tablename, records) else \
             self.__insert_helper(tablename, records)
 
+    def commit(self):
+        self.session.commit()
 
-def insert_unique_records_to_table(table, db_conn, records):
-    if not (table and db_conn and records):
-        return False
-    return True
 
 if __name__ == "__main__":
     import os
     import pandas as pd
+    import numpy as np
 
-    """
     engine = get_db_connection()
+    connection = engine.connect()
+
+    db = PostgresDatabase(connection)
+    """
 
     # Drop all tables if they exist
     meta = MetaData(engine)
@@ -93,18 +101,18 @@ if __name__ == "__main__":
     print(f'Start tables: {inspector.get_table_names()}')
 
     # Create diseases table
-    diseases = create_table_if_not_exists('diseases', engine,
+    diseases = db.create_table_if_not_exists('diseases', engine,
         Column('id', Integer, primary_key=True),
         Column('type', String, nullable=False))
 
     # Create Parameters table
-    parameters = create_table_if_not_exists('parameters', engine,
+    parameters = db.create_table_if_not_exists('parameters', engine,
         Column('id', Integer, primary_key=True),
         Column('type', String, nullable=False))
 
     # Create Disease-Parameters relationship table
     dis_param_link_name = 'disease_params_importance'
-    disease_params_importance = create_table_if_not_exists(dis_param_link_name, engine,
+    disease_params_importance = db.create_table_if_not_exists(dis_param_link_name, engine,
         Column('disease_id', Integer, ForeignKey('diseases.id'), nullable=False, primary_key=True),
         Column('parameter_id', Integer, ForeignKey('parameters.id'), nullable=False, primary_key=True),
         Column('importance', Integer, CheckConstraint('importance >= 0 and importance <= 5'), nullable=False))
@@ -119,5 +127,16 @@ if __name__ == "__main__":
                                     index_col='Disease Name',
                                     usecols=range(17))
     params_weights_df.dropna(inplace=True)
-    print(params_weights_df.to_dict('record'))
-    # print(params_weights_df.head())
+
+    diseases = list(params_weights_df.index)
+    disease_records = map(lambda x: {'type': x}, diseases)
+    res = db.insert_unique_records_to_table('diseases', disease_records)
+    db.commit()
+
+    all_params = params_weights_df[['P' + str(i) for i in range(1, 9)]] \
+        .values \
+        .flatten()
+    params = list(np.unique(all_params))
+    params_records = map(lambda x: {'type': x}, params)
+    res = db.insert_unique_records_to_table('parameters', params_records)
+    db.commit()
