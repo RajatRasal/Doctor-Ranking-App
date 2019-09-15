@@ -144,7 +144,7 @@ class TestPostgresInsert:
 
         assert res == expected
 
-    def test__insert_into_table(self):
+    def test_insert_into_table_new_records(self):
         records = [(1, 'name1'), (2, 'name2')]
         tablename = 'test_table'
         df = pd.DataFrame(records, columns=['id', 'name']) 
@@ -160,7 +160,13 @@ class TestPostgresInsert:
         assert select_all == records
         assert res == True
 
-    def test_insert_into_table_if_not_exists_fails(self, tablename, record):
+    def test_insert_into_table_if_not_exists_fails(self):
+        records = [(1, 'name1'), (2, 'name2')]
+        df = pd.DataFrame(records, columns=['id', 'name']) 
+        data = df.to_dict('records')
+
+        res = self.database._PostgresDatabase__insert_helper('x', data)
+
         return res == False
 
     def test_insert_into_table_fails_if_entering_same_row_twice(self):
@@ -171,12 +177,15 @@ class TestPostgresInsert:
         df = pd.DataFrame(records, columns=['id', 'name']) 
         data = df.to_dict('records')
 
-        self.database._PostgresDatabase__insert_helper(tablename, data)
-        res = self.database._PostgresDatabase__insert_helper(tablename, data)
+        res1 = self.database._PostgresDatabase__insert_helper(tablename, data)
+        res2 = self.database._PostgresDatabase__insert_helper(tablename, data)
+
+        assert res1
+        assert res2
 
         self.metadata.reflect()
         table = self.database.meta.tables[tablename]
         select_all = list(self.database.db_conn.execute(select([table])))
         print(select_all)
 
-        assert not res
+        assert select_all == records

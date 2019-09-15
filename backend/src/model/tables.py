@@ -5,6 +5,7 @@ equivalent to DDL only using SQLAlchemy's ORM instead of SQL.
 import sqlalchemy
 from sqlalchemy import MetaData, Table, Integer, String, Column, ForeignKey, \
     CheckConstraint, inspect
+from sqlalchemy.orm.session import Session
 
 from db_connection import get_db_connection
 
@@ -47,11 +48,17 @@ class PostgresDatabase:  # (DatabaseMixin):
         self.meta.reflect()
 
         try:
-            # get_or_create(tablename, records)
             table = self.meta.tables[tablename]
-            self.db_conn.execute(table.insert().values(records))
+            session = Session(self.db_conn)
+
+            for record in records:
+                res = session.query(table).filter_by(**record).first()
+                if not res:
+                    self.db_conn.execute(table.insert().values(record))
+
             return True
         except Exception as e:
+            print(e)
             return False
 
     def insert_unique_records_to_table(self, tablename, records):
