@@ -85,7 +85,7 @@ class TestPostgresCreate:
         assert table == None
         assert 'test_table' not in table_names
 
-class TestPostgresInsert:
+class TestPostgresGetOrInsertRecords:
 
     @pytest.fixture(autouse=True)
     def setup_savepoint(self, request, test_db_conn):
@@ -96,10 +96,15 @@ class TestPostgresInsert:
         self.engine = test_db_conn
         self.conn = self.engine.connect()
         self.trans = self.conn.begin()
+        self.metadata = MetaData(self.conn)
+        tablename = 'test_table'
+        table = Table(tablename, self.metadata,
+            Column('id', Integer, primary_key=True),
+            Column('name', String))
+        table.create(self.conn)
         self.database = PostgresDatabase(self.conn)
-        self.database.create_table_if_not_exists('test_table',
-            Column('id', Integer, primary_key=True), Column('name', String))
-        self.metadata = MetaData(self.database.db_conn)
+        # self.database.create_table_if_not_exists('test_table',
+        #     Column('id', Integer, primary_key=True), Column('name', String))
         print('YIELD TO:', request.function.__name__)
         yield 
         self.trans.rollback()
@@ -195,3 +200,18 @@ class TestPostgresInsert:
         with pytest.raises(IntegrityError):
             self.database.get_or_create_records_in_table(tablename, data)
             patch.assert_called_once()
+
+    def test_get_record_from_table_without_insert(self):
+        # Insert records in fixture
+        # Get them using get_or_create
+        # Check that correct record is got and existing records are the same
+        assert False
+
+    def test_get_record_from_table_based_on_partial_input_without_insert(self):
+        assert False
+
+    def test_get_multiple_records_from_table_without_insert(self):
+        assert False
+
+    def test_get_multiple_partial_records_from_table_without_insert(self):
+        assert False
