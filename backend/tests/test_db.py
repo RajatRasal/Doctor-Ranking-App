@@ -8,9 +8,10 @@ import pytest
 from sqlalchemy import MetaData, Column, Integer, String, Table, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import select
+from sqlalchemy.exc import NoSuchTableError, IntegrityError
 
-from src.model.tables import PostgresDatabase  # insert_unique_records_to_table
-# create_table_if_not_exists, \
+from tests.helper import does_not_raise
+from src.model.tables import PostgresDatabase
 
 class TestPostgresCreate:
 
@@ -97,52 +98,30 @@ class TestPostgresInsert:
         self.trans = self.conn.begin()
         self.database = PostgresDatabase(self.conn)
         self.database.create_table_if_not_exists('test_table',
-            Column('id', Integer), Column('name', String))
+            Column('id', Integer, primary_key=True), Column('name', String))
         self.metadata = MetaData(self.database.db_conn)
         print('YIELD TO:', request.function.__name__)
         yield 
         self.trans.rollback()
         print('TEARDOWN')
 
-    @pytest.mark.parametrize('tablename,df,expected', [
-        ('test_table', [], False),
-        ('', [{'x': 'x'}], False),
-        ('test_table', [{'x': 'x'}], True)
+    @pytest.mark.parametrize('tablename, df, expectation', [
+        ('test_table', [], does_not_raise()),
+        ('', [{'x': 'x'}], pytest.raises(NoSuchTableError)),
     ])
-    def test_insert_record_input_validation(self, tablename, df, expected):
+    def test_insert_into_erroneous_input_behaviour(self, tablename, df,
+                                                   expectation):
         """
         No action is performed when no records are input to be inserted into the
         table and False is returned.
         """
-        res = self.database._PostgresDatabase__insert_validation(tablename, df)
-        assert res == expected
+        with expectation:
+            self.database.get_or_create_records_in_table(tablename, df)
 
-    @mock.patch('src.model.tables.PostgresDatabase._PostgresDatabase__insert_validation')
-    @mock.patch('src.model.tables.PostgresDatabase._PostgresDatabase__insert_helper')
-    @pytest.mark.parametrize('valid, helper, expected', [
-        (True, True, True),
-        (False, True, False),
-        (True, False, False),
-        (False, False, False)
-    ])
-    def test_no_action_when_no_tablename_is_given_for_inserting(self,
-                                                                patch_helper,
-                                                                patch_validation,
-                                                                valid,
-                                                                helper,
-                                                                expected):
-        """
-        Behaviour of insert into table function.
-        """
-        patch_helper.return_value = valid
-        patch_validation.return_value = helper
-        res = self.database.insert_unique_records_to_table('test_tbl',
-                                                           pd.DataFrame())
-
-        assert patch_validation.call_count == 1
-        assert patch_helper.call_count == int(valid)
-
-        assert res == expected
+    def test_insert_into_table_empty_record_returns_nothing(self):
+        tablename = 'test_table'
+        res = self.database.get_or_create_records_in_table(tablename, [])
+        assert res == []
 
     def test_insert_into_table_new_records(self):
         records = [(1, 'name1'), (2, 'name2')]
@@ -150,7 +129,8 @@ class TestPostgresInsert:
         df = pd.DataFrame(records, columns=['id', 'name']) 
         data = df.to_dict('records')
 
-        res = self.database._PostgresDatabase__insert_helper(tablename, data)
+        res = self.database.get_or_create_records_in_table(tablename, data)
+        expected = list(map(lambda rec: (rec, True), records))
 
         self.metadata.reflect()
 
@@ -158,16 +138,15 @@ class TestPostgresInsert:
         select_all = list(self.database.db_conn.execute(select([table])))
 
         assert select_all == records
-        assert res == True
+        assert res == expected
 
     def test_insert_into_table_if_not_exists_fails(self):
         records = [(1, 'name1'), (2, 'name2')]
         df = pd.DataFrame(records, columns=['id', 'name']) 
         data = df.to_dict('records')
 
-        res = self.database._PostgresDatabase__insert_helper('x', data)
-
-        return res == False
+        with pytest.raises(NoSuchTableError):
+            self.database.get_or_create_records_in_table('x', data)
 
     def test_insert_into_table_fails_if_entering_same_row_twice(self):
         """
@@ -177,11 +156,11 @@ class TestPostgresInsert:
         df = pd.DataFrame(records, columns=['id', 'name']) 
         data = df.to_dict('records')
 
-        res1 = self.database._PostgresDatabase__insert_helper(tablename, data)
-        res2 = self.database._PostgresDatabase__insert_helper(tablename, data)
+        res1 = self.database.get_or_create_records_in_table(tablename, data)
+        res2 = self.database.get_or_create_records_in_table(tablename, data)
 
-        assert res1
-        assert res2
+        assert res1 == list(map(lambda x: (x, True), records))
+        assert res2 == list(map(lambda x: (x, False), records))
 
         self.metadata.reflect()
         table = self.database.meta.tables[tablename]
@@ -191,4 +170,28 @@ class TestPostgresInsert:
         assert select_all == records
 
     def test_insert_into_table_fails_if_entering_duplicates(self):
-        assert False
+        records = [(1, 'name1'), (1, 'name1')]
+        tablename = 'test_table'
+        df = pd.DataFrame(records, columns=['id', 'name']) 
+        data = df.to_dict('records')
+
+        res = self.database.get_or_create_records_in_table(tablename, data)
+
+        assert res == [((1, 'name1'), True), ((1, 'name1'), False)]
+
+        self.metadata.reflect()
+        table = self.database.meta.tables[tablename]
+        select_all = list(self.database.db_conn.execute(select([table])))
+
+        assert select_all == [(1, 'name1')]
+
+    @mock.patch('src.model.tables.PostgresDatabase.rollback')
+    def test_insert_into_table_fails_if_entering_duplicate_pkeys(self, patch):
+        records = [(1, 'name1'), (1, 'name2')]
+        tablename = 'test_table'
+        df = pd.DataFrame(records, columns=['id', 'name']) 
+        data = df.to_dict('records')
+
+        with pytest.raises(IntegrityError):
+            self.database.get_or_create_records_in_table(tablename, data)
+            patch.assert_called_once()

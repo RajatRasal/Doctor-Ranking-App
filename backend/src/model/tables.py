@@ -6,6 +6,7 @@ import sqlalchemy
 from sqlalchemy import MetaData, Table, Integer, String, Column, ForeignKey, \
     CheckConstraint, inspect
 from sqlalchemy.orm.session import Session
+from sqlalchemy.exc import NoSuchTableError, IntegrityError
 
 from db_connection import get_db_connection
 
@@ -36,42 +37,37 @@ class PostgresDatabase:  # (DatabaseMixin):
         except sqlalchemy.exc.InvalidRequestError:
             return None
 
-    def __insert_validation(self, tablename, records):
-        self.meta.reflect()
-
-        if not (bool(tablename) and records):
-            return False
-
-        if tablename not in self.meta.tables:
-            return False
-
-        return True 
-
-    def __insert_helper(self, tablename, records):
+    def get_or_create_records_in_table(self, tablename, records):
         self.meta.reflect()
 
         try:
             table = self.meta.tables[tablename]
+        except KeyError:
+            raise NoSuchTableError(tablename)
 
+        res_list = []
+
+        try:
             for record in records:
-                print(record, end=' - ')
                 res = self.session.query(table).filter_by(**record).first()
                 if not res:
-                    print('inserted')
                     self.db_conn.execute(table.insert().values(record))
+                    res = self.session.query(table).filter_by(**record).first()
+                    res_list.append((res, True))
                 else:
-                    print('not inserted')
+                    res_list.append((res, False))
+        except IntegrityError as e:
+            self.rollback()
+            raise e
 
-            return True
-        except Exception as e:
-            print(e)
-            return False
+        return res_list
 
-    def insert_unique_records_to_table(self, tablename, records):
-        """
-        """
-        return False if not self.__insert_validation(tablename, records) else \
-            self.__insert_helper(tablename, records)
+    def find_record_in_table(self, tablename, **kwargs):
+        pass
+
+    def rollback(self):
+        self.session.rollback()
+        self.session = Session(self.db_conn)
 
     def commit(self):
         self.session.commit()
@@ -121,6 +117,7 @@ if __name__ == "__main__":
     print(f'New tables: {inspector.get_table_names()}')
     """
 
+    # Load Disease types and their associated parameters.
     backend_src_dir = os.path.dirname(os.path.abspath(__file__))
     data = f'{backend_src_dir}/../../tests/parameter_weight_test_data.csv'
     params_weights_df = pd.read_csv(data, skiprows=[0],
@@ -128,15 +125,18 @@ if __name__ == "__main__":
                                     usecols=range(17))
     params_weights_df.dropna(inplace=True)
 
+    # Inserting all new disease types into database table.
     diseases = list(params_weights_df.index)
     disease_records = map(lambda x: {'type': x}, diseases)
     res = db.insert_unique_records_to_table('diseases', disease_records)
     db.commit()
 
-    all_params = params_weights_df[['P' + str(i) for i in range(1, 9)]] \
-        .values \
-        .flatten()
+    # Inserting all new parameter types into parameter table.
+    cols = ['P' + str(i) for i in range(1, 9)]
+    all_params = params_weights_df[cols].values.flatten()
     params = list(np.unique(all_params))
     params_records = map(lambda x: {'type': x}, params)
     res = db.insert_unique_records_to_table('parameters', params_records)
     db.commit()
+
+    # Get id names
