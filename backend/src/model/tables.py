@@ -128,7 +128,7 @@ if __name__ == "__main__":
     # Inserting all new disease types into database table.
     diseases = list(params_weights_df.index)
     disease_records = map(lambda x: {'type': x}, diseases)
-    res = db.insert_unique_records_to_table('diseases', disease_records)
+    disease_res = db.insert_unique_records_to_table('diseases', disease_records)
     db.commit()
 
     # Inserting all new parameter types into parameter table.
@@ -136,7 +136,11 @@ if __name__ == "__main__":
     all_params = params_weights_df[cols].values.flatten()
     params = list(np.unique(all_params))
     params_records = map(lambda x: {'type': x}, params)
-    res = db.insert_unique_records_to_table('parameters', params_records)
+    params_res = db.insert_unique_records_to_table('parameters', params_records)
     db.commit()
 
-    # Get id names
+    # Below algorithm is currently Ω(n^2), but can be made better by loading the
+    # disease_res and params_res lists into dictionaries.
+    # for _id, disease in disease_res:
+    #    disease_paramse = params_weights_df[disease, cols]
+

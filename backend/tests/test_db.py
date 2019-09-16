@@ -95,13 +95,15 @@ class TestPostgresGetOrInsertRecords:
         print('SETUP')
         self.engine = test_db_conn
         self.conn = self.engine.connect()
+        self.session = sessionmaker(self.conn)()
         self.trans = self.conn.begin()
         self.metadata = MetaData(self.conn)
         tablename = 'test_table'
-        table = Table(tablename, self.metadata,
+        self.table = Table(tablename, self.metadata,
             Column('id', Integer, primary_key=True),
             Column('name', String))
-        table.create(self.conn)
+        print('HERE')
+        self.table.create(self.conn)
         self.database = PostgresDatabase(self.conn)
         # self.database.create_table_if_not_exists('test_table',
         #     Column('id', Integer, primary_key=True), Column('name', String))
@@ -109,6 +111,13 @@ class TestPostgresGetOrInsertRecords:
         yield 
         self.trans.rollback()
         print('TEARDOWN')
+
+    @pytest.fixture(name='insert_record_directly')
+    def fixture_insert_records_directly(self):
+        print('HERE 2')
+        self.conn.execute(self.table.insert().values({'id': 1, 'name': 'x'}))
+        self.conn.execute(self.table.insert().values({'id': 2, 'name': 'x'}))
+        self.conn.execute(self.table.insert().values({'id': 3, 'name': 'y'}))
 
     @pytest.mark.parametrize('tablename, df, expectation', [
         ('test_table', [], does_not_raise()),
@@ -201,17 +210,68 @@ class TestPostgresGetOrInsertRecords:
             self.database.get_or_create_records_in_table(tablename, data)
             patch.assert_called_once()
 
-    def test_get_record_from_table_without_insert(self):
-        # Insert records in fixture
-        # Get them using get_or_create
-        # Check that correct record is got and existing records are the same
-        assert False
+    def test_get_record_from_table(self, insert_record_directly):
+        test_table = 'test_table'
+        # select_all = select([test_table])
+        # before = self.conn.execute(select_all).fetchall()
+        # before = list(self.conn.execute(select([test_table])))
+        table = self.metadata.tables[test_table]
+        before = self.conn.execute(table.select()).fetchall()
+        # print(f'before: {before}')
 
-    def test_get_record_from_table_based_on_partial_input_without_insert(self):
-        assert False
+        records = [{'id': 1, 'name': 'x'}]
+        res = self.database.get_or_create_records_in_table(test_table, records)
+        assert res == [((1, 'x'), False)]
 
-    def test_get_multiple_records_from_table_without_insert(self):
-        assert False
+        # after = self.conn.execute(select_all).fetchall()
+        # after = list(self.conn.execute(select([table])))
+        after = self.conn.execute(table.select()).fetchall()
+        # print(f'after: {after}')
+        assert before == after
 
-    def test_get_multiple_partial_records_from_table_without_insert(self):
-        assert False
+    def test_get_record_from_table_from_partial_input(self, insert_record_directly):
+        test_table = 'test_table'
+        table = self.metadata.tables[test_table]
+        before = self.conn.execute(table.select()).fetchall()
+
+        records = [{'id': 2}]
+        res = self.database.get_or_create_records_in_table(test_table, records)
+        assert res == [((2, 'x'), False)]
+
+        after = self.conn.execute(table.select()).fetchall()
+        assert before == after
+
+    def test_get_multiple_records_from_table(self, insert_record_directly):
+        test_table = 'test_table'
+        table = self.metadata.tables[test_table]
+        before = self.conn.execute(table.select()).fetchall()
+
+        records = [{'id': 1, 'name': 'x'}, {'id': 2, 'name': 'x'}]
+        res = self.database.get_or_create_records_in_table(test_table, records)
+        assert res == [((1, 'x'), False), ((2, 'x'), False)]
+
+        after = self.conn.execute(table.select()).fetchall()
+        assert before == after
+
+    def test_get_multiple_partial_records_from_table(self, insert_record_directly):
+        test_table = 'test_table'
+        table = self.metadata.tables[test_table]
+        before = self.conn.execute(table.select()).fetchall()
+
+        records = [{'name': 'x'}, {'id': 2}]
+        res = self.database.get_or_create_records_in_table(test_table, records)
+        assert res == [((1, 'x'), False), ((2, 'x'), False)]
+
+        after = self.conn.execute(table.select()).fetchall()
+        assert before == after
+
+    """
+    def test_insert_returns_unique_pkeys_for_last_inserted_records(self):
+        test_table = 'test_table'
+        table = self.metadata.tables[test_table]
+
+        records = [{'name': 'x'}, {'name': 'y'}]
+        res = self.database.get_or_create_records_in_table(test_table, records)
+
+        assert res == [((1, 'x'), False), ((2, 'x'), False)]
+    """
