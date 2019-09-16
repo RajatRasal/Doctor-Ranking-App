@@ -51,7 +51,7 @@ class PostgresDatabase:  # (DatabaseMixin):
             for record in records:
                 res = self.session.query(table).filter_by(**record).first()
                 if not res:
-                    self.db_conn.execute(table.insert().values(record))
+                    self.session.execute(table.insert(), [record])
                     res = self.session.query(table).filter_by(**record).first()
                     res_list.append((res, True))
                 else:
@@ -141,6 +141,8 @@ if __name__ == "__main__":
 
     # Below algorithm is currently Ω(n^2), but can be made better by loading the
     # disease_res and params_res lists into dictionaries.
-    # for _id, disease in disease_res:
-    #    disease_paramse = params_weights_df[disease, cols]
+    for _id, disease in disease_res:
+        disease_paramse = params_weights_df[disease, cols]
+
+
 
