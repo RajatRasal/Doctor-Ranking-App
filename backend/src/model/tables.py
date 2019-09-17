@@ -2,6 +2,8 @@
 ORM functions for creating and deleting table definitions in the database,
 equivalent to DDL only using SQLAlchemy's ORM instead of SQL.
 """
+from itertools import product
+
 import sqlalchemy
 from sqlalchemy import MetaData, Table, Integer, String, Column, ForeignKey, \
     CheckConstraint, inspect
@@ -117,6 +119,7 @@ if __name__ == "__main__":
     print(f'New tables: {inspector.get_table_names()}')
     """
 
+    """
     # Load Disease types and their associated parameters.
     backend_src_dir = os.path.dirname(os.path.abspath(__file__))
     data = f'{backend_src_dir}/../../tests/parameter_weight_test_data.csv'
@@ -124,25 +127,70 @@ if __name__ == "__main__":
                                     index_col='Disease Name',
                                     usecols=range(17))
     params_weights_df.dropna(inplace=True)
+    params_weights_df.index = params_weights_df.index.str.lower()
+
+    cols = ['P' + str(i) for i in range(1, 9)]
+    params_weights_df[cols] = params_weights_df[cols] \
+        .apply(lambda col: col.str.lower())
+
+    weight_cols = [col + ' Weight' for col in cols]
+    weights_df = params_weights_df[weight_cols]
+    params_weights_df[weight_cols] = weights_df \
+        .where(weights_df >= 0, 0) \
+        .where(weights_df <= 5, 5)
 
     # Inserting all new disease types into database table.
-    diseases = list(params_weights_df.index)
+    diseases = list(disease for disease in params_weights_df.index)
     disease_records = map(lambda x: {'type': x}, diseases)
-    disease_res = db.insert_unique_records_to_table('diseases', disease_records)
+    disease_res = db.get_or_create_records_in_table('diseases', disease_records)
     db.commit()
 
     # Inserting all new parameter types into parameter table.
-    cols = ['P' + str(i) for i in range(1, 9)]
     all_params = params_weights_df[cols].values.flatten()
-    params = list(np.unique(all_params))
+    params = list(param for param in np.unique(all_params))
     params_records = map(lambda x: {'type': x}, params)
-    params_res = db.insert_unique_records_to_table('parameters', params_records)
+    params_res = db.get_or_create_records_in_table('parameters', params_records)
+    # print(params_res)
+    params_res_map = {param:_id for (_id, param), _ in params_res}
+    # print(params_res_map)
     db.commit()
+
+    # Collecting disease_id and param_id pairs, together with weights and
+    # inserting all of this into the disease_params_importance relationship table.
 
     # Below algorithm is currently Ω(n^2), but can be made better by loading the
     # disease_res and params_res lists into dictionaries.
-    for _id, disease in disease_res:
-        disease_paramse = params_weights_df[disease, cols]
+    for (disease_id, disease), _ in disease_res:
+        print(f'Inserting disease {disease} into link table')
+        disease_params = params_weights_df.loc[disease, cols]
+        param_ids = disease_params.map(params_res_map).to_list()
+        weights = params_weights_df.loc[disease, weight_cols].to_list()
 
+        link_records = []
+        for param_id, weight in zip(param_ids, weights):
+            link_records.append({'disease_id': disease_id,
+                                 'parameter_id': param_id,
+                                 'importance': weight})
 
+        res = db.get_or_create_records_in_table('disease_params_importance',
+                                                link_records)
+    db.commit()
+    """
 
+    # Load Disease types and their associated parameters.
+    backend_src_dir = os.path.dirname(os.path.abspath(__file__))
+    data = f'{backend_src_dir}/../../tests/hcp_weightage_test_data.csv'
+    params_weights_df = pd.read_csv(data, skiprows=[0],
+                                    index_col='HCP Number',
+                                    usecols=range(17))
+    params_weights_df.dropna(inplace=True)
+    params_weights_df.index = params_weights_df.index.str.lower()
+
+    cols = ['P' + str(i) for i in range(1, 9)]
+    params_weights_df[cols] = params_weights_df[cols] \
+        .apply(lambda col: col.str.lower())
+
+    weight_cols = [col + ' Weight' for col in cols]
+    weights_df = params_weights_df[weight_cols]
+    params_weights_df[weight_cols] = weights_df \
+        .where(weights_df >= 0, 0) \
