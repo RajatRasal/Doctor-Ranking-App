@@ -1,1 +1,23 @@
-﻿,Parameters | Weight,,,,,,,,,,,,,,,,,,,,,,Disease Name,P1,P1 Weight,P2,P2 Weight,P3,P3 Weight,P4,P4 Weight,P5,P5 Weight,P6,P6 Weight,P7,P7 Weight,P8,P8 Weight,,,,,,,Test Disease 1,Specialization,3,Distance,3,Hospital,2,Influencer,5,Publications,3,Open to meet,5,Volume of patients,4,Activity - n,1,,,,,,,Test Disease 2,Specialization,1,Distance,5,Hospital,7,Influencer,5,Publications,2,Open to meet,3,Volume of patients,2,Activity - n,3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+HCP Number,Wt.1,Wt.2,Wt.3,Wt.4,Wt.5
+Dr.1,5,4,3,2,1
+Dr.2,5,5,5,5,5
+Dr.3,5,5,5,5,4
+Dr.4,1,2,2,2,3
+Dr.5,1,2,3,4,5
+Dr.6,1,5,1,2,3
+Dr.7,2,3,4,5,1
+Dr.8,1,5,4,2,3
+Dr.9,1,1,1,1,1
+Dr.10,2,1,1,1,1
+Dr.11,3,4,5,1,3
+Dr.12,2,4,4,2,3
+Dr.13,3,4,2,2,1
+Dr.14,3,3,4,5,2
+Dr.15,2,1,2,3,4
+Dr.16,1,3,3,4,4
+Dr.17,2,4,4,3,4
+Dr.18,3,5,4,2,4
+Dr.19,4,4,4,5,4
+Dr.20,5,3,5,3,2
+Dr.21,4,2,2,1,2
+Dr.22,3,1,3,3,2

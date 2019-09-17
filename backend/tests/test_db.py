@@ -265,13 +265,7 @@ class TestPostgresGetOrInsertRecords:
         after = self.conn.execute(table.select()).fetchall()
         assert before == after
 
-    """
-    def test_insert_returns_unique_pkeys_for_last_inserted_records(self):
-        test_table = 'test_table'
-        table = self.metadata.tables[test_table]
-
-        records = [{'name': 'x'}, {'name': 'y'}]
-        res = self.database.get_or_create_records_in_table(test_table, records)
-
-        assert res == [((1, 'x'), False), ((2, 'x'), False)]
-    """
+    def test_get_or_create_does_not_return_duplicates(self):
+        # Each inserted record's result should be added to an OrderedSet
+        # Convert the ordered set to a list and return it.
+        assert False
