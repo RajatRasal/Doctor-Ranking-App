@@ -180,17 +180,41 @@ if __name__ == "__main__":
     # Load Disease types and their associated parameters.
     backend_src_dir = os.path.dirname(os.path.abspath(__file__))
     data = f'{backend_src_dir}/../../tests/hcp_weightage_test_data.csv'
-    params_weights_df = pd.read_csv(data, skiprows=[0],
-                                    index_col='HCP Number',
-                                    usecols=range(17))
-    params_weights_df.dropna(inplace=True)
-    params_weights_df.index = params_weights_df.index.str.lower()
+    hcp_weight_df = pd.read_csv(data, index_col='HCP Number')
 
-    cols = ['P' + str(i) for i in range(1, 9)]
-    params_weights_df[cols] = params_weights_df[cols] \
-        .apply(lambda col: col.str.lower())
+    hcp_weight_df.index.name = 'hcp_number'
+    # new_cols = ['hcp_number'] + [f'weight_{i}' for i in range(1, 6)]
+    # new_col_names = dict(zip(hcp_weight_df.columns, new_cols)) 
+    # hcp_weight_df.rename(columns=new_col_names, inplace=True)
 
-    weight_cols = [col + ' Weight' for col in cols]
-    weights_df = params_weights_df[weight_cols]
-    params_weights_df[weight_cols] = weights_df \
-        .where(weights_df >= 0, 0) \
+    hcp_weight_df = hcp_weight_df \
+       .where(hcp_weight_df >= 0, 0) \
+       .where(hcp_weight_df <= 5, 5)
+
+    hcp_weight_df.index = hcp_weight_df.index \
+        .str \
+        .slice(3) \
+        .astype(int)
+
+    # Create diseases table
+    doctors = db.create_table_if_not_exists('doctors',
+        Column('hcp_number', Integer, nullable=False),
+        Column('weight_no', Integer, CheckConstraint('weight_no >= 0'), default=0),
+        Column('weight', Integer, CheckConstraint('weight >= 0 and weight <= 5'), default=0))
+
+    hcp_weight_records = hcp_weight_df.to_dict()
+    for i, col in enumerate(hcp_weight_df.columns):
+        dict_map = lambda _id, weight_no, weight: {'hcp_number': _id,
+                                                   'weight_no': weight_no,
+                                                   'weight': weight}
+        records = [dict_map(_id, i, weight) 
+                   for _id, weight in hcp_weight_records[col].items()]
+        db.get_or_create_records_in_table('doctors', records)
+
+    print(hcp_weight_records)
+
+    # for col in hcp_weight_df.columns:
+    #    print(hcp_weight_records[col])
+    # res = db.get_or_create_records_in_table('doctors', hcp_weight_records) 
+
+    db.commit()
