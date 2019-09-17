@@ -198,8 +198,8 @@ if __name__ == "__main__":
 
     # Create diseases table
     doctors = db.create_table_if_not_exists('doctors',
-        Column('hcp_number', Integer, nullable=False),
-        Column('weight_no', Integer, CheckConstraint('weight_no >= 0'), default=0),
+        Column('hcp_number', Integer, primary_key=True, nullable=False),
+        Column('weight_no', Integer, CheckConstraint('weight_no >= 0'), primary_key=True, default=0),
         Column('weight', Integer, CheckConstraint('weight >= 0 and weight <= 5'), default=0))
 
     hcp_weight_records = hcp_weight_df.to_dict()
