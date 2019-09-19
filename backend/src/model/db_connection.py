@@ -6,7 +6,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
 
-from src.settings import _SETTINGS
+from settings import _SETTINGS
 
 def _create_engine_wrapper(url):
     return create_engine(url)
