@@ -9,7 +9,10 @@ def calculate_score_using_db(db_conn, disease):
     query_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
                               'model/get_ranking.sql')
     with open(query_file, 'r') as get_ranking_query_ptr:
-        query = ' '.join(get_ranking_query_ptr).replace('\n', ' ')
+        query = ' '.join(get_ranking_query_ptr) \
+            .replace('\n', ' ') \
+            .format(disease=disease)
+        query = query.format(disease=disease)
 
     res = db_conn.execute(query)
     return [row[0:2] for row in res] 
@@ -19,5 +22,8 @@ if __name__ == '__main__':
     
     from model.db_connection import get_db_connection
     db_conn = get_db_connection().connect()
-    disease_name = 'Test Disease 1'
-    print(calculate_score_using_db(db_conn, disease_name))
+    disease_name = 'test disease 3'
+    res = calculate_score_using_db(db_conn, disease_name)
+    
+    for row in res:
+        print(row)
