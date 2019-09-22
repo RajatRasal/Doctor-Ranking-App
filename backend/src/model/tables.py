@@ -177,7 +177,7 @@ if __name__ == "__main__":
     db.commit()
     """
 
-    # Load Disease types and their associated parameters.
+    # Load Doctors and their associated weights.
     backend_src_dir = os.path.dirname(os.path.abspath(__file__))
     data = f'{backend_src_dir}/../../tests/hcp_weightage_test_data.csv'
     hcp_weight_df = pd.read_csv(data, index_col='HCP Number')
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         .slice(3) \
         .astype(int)
 
-    # Create diseases table
+    # Create doctors table
     doctors = db.create_table_if_not_exists('doctors',
         Column('hcp_number', Integer, primary_key=True, nullable=False),
         Column('weight_no', Integer, CheckConstraint('weight_no >= 0'), primary_key=True, default=0),
