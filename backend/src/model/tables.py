@@ -10,8 +10,6 @@ from sqlalchemy import MetaData, Table, Integer, String, Column, ForeignKey, \
 from sqlalchemy.orm.session import Session
 from sqlalchemy.exc import NoSuchTableError, IntegrityError
 
-from db_connection import get_db_connection
-
 class PostgresDatabase:  # (DatabaseMixin):
 
     def __init__(self, db_conn):
@@ -79,6 +77,7 @@ if __name__ == "__main__":
     import os
     import pandas as pd
     import numpy as np
+    from .db_connection import get_db_connection
 
     engine = get_db_connection()
     connection = engine.connect()

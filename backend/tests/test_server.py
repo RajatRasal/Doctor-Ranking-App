@@ -11,26 +11,24 @@ from src.server import create_app
 class TestFlaskServer:
 
     def setup(self):
-        print('SETUP')
         self.server = create_app().test_client()
-        """
-        self.engine = test_db_conn
-        self.conn = self.engine.connect()
-        self.trans = self.conn.begin()
-        self.database = PostgresDatabase(self.conn)
-        self.metadata = MetaData(self.database.db_conn)
-        print('YIELD TO:', request.function.__name__)
-        yield 
-        self.trans.rollback()
-        print('TEARDOWN')
-        """
 
     def test_sanity_check(self):
         response = self.server.get('/')
         assert response.status_code == 200
+        assert response.get_data() == b'Hello World!'
 
-    def DONOT_test_server_gets_list_of_diseases_and_returns_200(self):
-        assert False
+    @mock.patch('src.ranking_engine.HcpRankingEngine.list_diseases')
+    def test_server_gets_list_of_diseases_and_returns_200(self, patch_engine,
+                                                          test_client):
+        all_diseases = ['disease 1', 'disease 2']
+        patch_engine.return_value = all_diseases
 
-    def DONOT_test_server_gets_fails_to_get_diseases_list_and_returns_400(self):
-        assert False
+        response = test_client.get('/diseases')
+
+        assert response.status_code == 200
+        assert response.is_json
+
+        patch_engine.assert_called_once()
+
+        assert response.get_json() == {'diseases': all_diseases} 
