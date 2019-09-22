@@ -64,7 +64,7 @@ class PostgresDatabase:  # (DatabaseMixin):
 
         return res_list
 
-    def find_record_in_table(self, tablename, **kwargs):
+    def find_record_in_table(self, tablename, records):
         pass
 
     def rollback(self):

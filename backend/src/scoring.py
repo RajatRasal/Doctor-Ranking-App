@@ -8,7 +8,7 @@ from sqlalchemy import MetaData, func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import select
 
-def calculate_score_using_db(db_conn, disease_name):
+def calculate_score_using_orm(db_conn, disease_name):
     meta = MetaData(db_conn)
     meta.reflect()
     dpi = meta.tables['disease_params_importance']
