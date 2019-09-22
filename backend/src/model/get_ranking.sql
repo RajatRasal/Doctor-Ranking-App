@@ -7,7 +7,7 @@ with hcp_rank as (
       from disease_params_importance as dpi
       inner join diseases as d
       on d.id = dpi.disease_id
-      where d.type = '{disease}') as Y)
+      where d.type = 'test disease 3') as Y)
 select distinct hcp_score.hcp_no as hcp_no, score, w_1, w_2, w_3, w_4, w_5
 from (
   select hcp_no, sum(w * i) as score
