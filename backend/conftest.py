@@ -47,6 +47,9 @@ def test_client():
 
 @pytest.fixture()
 def test_ranking_engine():
+    """
+    Test fixture for ranking engine with postgres connection
+    """
     engine = _get_test_db_conn()
     db_conn = engine.connect()
     db = PostgresDatabase(db_conn)

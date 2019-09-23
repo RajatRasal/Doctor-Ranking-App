@@ -28,4 +28,4 @@ class TestFlaskServer:
 
         patch_engine.assert_called_once()
 
-        assert response.get_json() == {'diseases': all_diseases}
+        assert response.get_json() == {'diseases': all_diseases} 
