@@ -10,8 +10,8 @@ from src.server import create_app
 
 class TestFlaskServer:
 
-    def test_sanity_check(self):
-        response = self.server.get('/')
+    def test_sanity_check(self, test_client):
+        response = test_client.get('/')
         assert response.status_code == 200
         assert response.get_data() == b'Hello World!'
 
