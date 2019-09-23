@@ -8,6 +8,9 @@ import pytest
 from sqlalchemy import MetaData
 
 from src.server import create_app
+from src.ranking_engine import HcpRankingEngine
+from src.model.tables import PostgresDatabase
+
 
 _PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(_PROJECT_ROOT, 'src'))
@@ -41,3 +44,11 @@ def test_client():
     Generate test client instance for Flask server.
     """
     return create_app().test_client()
+
+@pytest.fixture()
+def test_ranking_engine():
+    engine = _get_test_db_conn()
+    db_conn = engine.connect()
+    db = PostgresDatabase(db_conn)
+    ranking_engine = HcpRankingEngine(db)
+    return ranking_engine

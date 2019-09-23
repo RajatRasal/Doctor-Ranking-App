@@ -2,21 +2,50 @@
 ORM functions for creating and deleting table definitions in the database,
 equivalent to DDL only using SQLAlchemy's ORM instead of SQL.
 """
+import abc
 from itertools import product
 
 import sqlalchemy
 from sqlalchemy import MetaData, Table, Integer, String, Column, ForeignKey, \
     CheckConstraint, inspect
 from sqlalchemy.orm.session import Session
+from sqlalchemy.orm import load_only
 from sqlalchemy.exc import NoSuchTableError, IntegrityError
 
-class PostgresDatabase:  # (DatabaseMixin):
+
+class DatabaseAbstraction(abc.ABC):
+
+    def __init__(self, db_conn):
+        self.db_conn = db_conn
+
+    @abc.abstractmethod
+    def create_table_if_not_exists(self, name, *cols):
+        pass
+
+    @abc.abstractmethod
+    def get_or_create_records_in_table(self, tablename, records):
+        pass
+
+    @abc.abstractmethod
+    def findall_records_in_table(self, tablename, *cols):
+        pass
+
+    @abc.abstractmethod
+    def rollback(self):
+        pass
+
+    @abc.abstractmethod
+    def commit(self):
+        pass
+
+
+class PostgresDatabase(DatabaseAbstraction):
 
     def __init__(self, db_conn):
         self.db_conn = db_conn
         self.meta = MetaData(self.db_conn)
         self.session = Session(self.db_conn)
-        
+
     def create_table_if_not_exists(self, name, *cols):
         """
         Create a new table using the inputted connection engine and columns,
@@ -24,7 +53,7 @@ class PostgresDatabase:  # (DatabaseMixin):
         """
         if not (cols and self.db_conn):
             return None
-    
+
         # Reflect db connetion to get existing schema from database
         # self.meta = MetaData(self.db_conn)
         self.meta.reflect()
@@ -62,8 +91,12 @@ class PostgresDatabase:  # (DatabaseMixin):
 
         return res_list
 
-    def find_record_in_table(self, tablename, records):
-        pass
+    def findall_records_in_table(self, tablename, *cols):
+        self.meta.reflect()
+
+        table = self.meta.tables[tablename]
+        res = self.session.query(*[table.c[col] for col in cols])
+        return list(res)
 
     def rollback(self):
         self.session.rollback()
