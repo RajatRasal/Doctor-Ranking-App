@@ -20,7 +20,10 @@ def create_app():
 
     return app
 
+hcp_engine.add_url_rule('/test', 'test', lambda: f'Hello World!')
+
 hcp_engine.add_url_rule('/', 'test', lambda: f'Hello World!')
+# at root return single react page
 
 @hcp_engine.route('/diseases', methods=['GET'])
 def diseases():
