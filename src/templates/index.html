@@ -5,8 +5,8 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   </head>
   <body>
-    <h1>Button</h1>
-    <div id="like_button_container"></div>
+    <h1>Select Disease</h1>
+    <div id="disease_selection_form"></div>
     <script src="{{ url_for('static', filename='scripts/like_button.js') }}?{{ range(1, 51) | random }}" 
       type="text/babel"></script>
   </body>

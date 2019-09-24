@@ -9,7 +9,7 @@ import sqlalchemy
 from sqlalchemy import MetaData, Table, Integer, String, Column, ForeignKey, \
     CheckConstraint, inspect
 from sqlalchemy.orm.session import Session
-from sqlalchemy.orm import load_only
+from sqlalchemy.orm import load_only, sessionmaker
 from sqlalchemy.exc import NoSuchTableError, IntegrityError
 
 
@@ -44,7 +44,9 @@ class PostgresDatabase(DatabaseAbstraction):
     def __init__(self, db_conn):
         self.db_conn = db_conn
         self.meta = MetaData(self.db_conn)
-        self.session = Session(self.db_conn)
+        # self.session = Session()
+        self.session = sessionmaker(bind=self.db_conn)()
+        # self.session.configure(bind=self.db_conn)
 
     def create_table_if_not_exists(self, name, *cols):
         """
