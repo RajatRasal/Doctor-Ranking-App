@@ -3,9 +3,9 @@ import os
 from flask import Flask, Blueprint, jsonify, current_app, render_template, \
     make_response
 
-from src.model.tables import PostgresDatabase
-from src.model.db_connection import get_db_connection
-from src.ranking_engine import HcpRankingEngine
+from model.tables import PostgresDatabase
+from model.db_connection import get_db_connection
+from ranking_engine import HcpRankingEngine
 
 
 hcp_engine = Blueprint('hcp_engine', __name__)
