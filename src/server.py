@@ -1,4 +1,7 @@
-from flask import Flask, Blueprint, jsonify, current_app
+import os
+
+from flask import Flask, Blueprint, jsonify, current_app, render_template, \
+    make_response
 
 from src.model.tables import PostgresDatabase
 from src.model.db_connection import get_db_connection
@@ -22,8 +25,18 @@ def create_app():
 
 hcp_engine.add_url_rule('/test', 'test', lambda: f'Hello World!')
 
-hcp_engine.add_url_rule('/', 'test', lambda: f'Hello World!')
-# at root return single react page
+dirname = os.path.dirname(os.path.abspath(__file__))
+index_file = os.path.join(dirname, 'template/index.html')
+# hcp_engine.add_url_rule('/', 'index', render_template('index.html'))
+
+@hcp_engine.route('/', methods=['GET'])
+def index():
+    response = make_response(render_template('index.html'))
+    response.headers.set('Cache-Control', 'no-store, must-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', 0)
+    return response
+
 
 @hcp_engine.route('/diseases', methods=['GET'])
 def diseases():

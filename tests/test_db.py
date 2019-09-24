@@ -269,3 +269,25 @@ class TestPostgresGetOrInsertRecords:
         # Each inserted record's result should be added to an OrderedSet
         # Convert the ordered set to a list and return it.
         assert False
+
+class TestPostgresFindall:
+
+    @pytest.fixture(autouse=True)
+    def setup_savepoint(self, request, test_db_conn):
+        """ 
+        Drops all tables in test db instance.
+        """
+        print('SETUP')
+        self.engine = test_db_conn
+        self.conn = self.engine.connect()
+        self.tablename = 'test_table'
+        self.table = Table(tablename, self.metadata,
+            Column('id', Integer, primary_key=True),
+            Column('name', String))
+        print('HERE')
+        self.table.create(self.conn)
+        self.database = PostgresDatabase(self.conn)
+        print('YIELD TO:', request.function.__name__)
+        yield 
+        self.trans.rollback()
+        print('TEARDOWN')
