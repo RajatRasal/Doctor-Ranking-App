@@ -3,9 +3,14 @@ import os
 from flask import Flask, Blueprint, jsonify, current_app, render_template, \
     make_response
 
-from model.tables import PostgresDatabase
-from model.db_connection import get_db_connection
-from ranking_engine import HcpRankingEngine
+try:
+    from src.model.tables import PostgresDatabase
+    from src.model.db_connection import get_db_connection
+    from src.ranking_engine import HcpRankingEngine
+except Exception:
+    from model.tables import PostgresDatabase
+    from model.db_connection import get_db_connection
+    from ranking_engine import HcpRankingEngine
 
 
 hcp_engine = Blueprint('hcp_engine', __name__)
@@ -43,6 +48,16 @@ def diseases():
     ranking_engine = current_app.config['hcp_rank_engine']
     all_diseases = ranking_engine.list_diseases()
     return jsonify({'diseases': all_diseases})
+
+@hcp_engine.route('/diseases/<disease>', methods=['POST'])
+def get_parameter_importance(disease):
+    print(disease)
+    ranking_engine = current_app.config['hcp_rank_engine']
+    param_importance = ranking_engine.list_parameters(disease)
+    res_json = [{'parameter': p, 'importance': i} for p, i in param_importance]
+    print(res_json)
+    return jsonify(res_json)
+
 
 if __name__ == "__main__":
     app = create_app()

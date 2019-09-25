@@ -2,6 +2,16 @@
 Engine is responsible for handling requests from the user by querying in the
 backend database or for getting the result of the ranking algorithm.
 """
+import os
+
+from sqlalchemy.orm import sessionmaker
+
+try:
+    from model.db_connection import get_db_connection
+except:
+    from src.model.db_connection import get_db_connection
+
+
 class HcpRankingEngine:
 
     def __init__(self, db):
@@ -10,6 +20,22 @@ class HcpRankingEngine:
     def list_diseases(self):
         res = self.db.findall_records_in_table('diseases', 'type')
         return [row[0] for row in res]
+
+    def list_parameters(self, disease):
+        engine = get_db_connection()
+        session = sessionmaker(bind=engine)()
+
+        try:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            x = os.path.join(current_dir, 'model/list_all_params_for_disease.sql')
+            with open(x, 'r') as f:
+                x = ''.join(f.readlines()).replace('\n', ' ').format(disease=disease)
+            res = [row for row in session.execute(x)]
+        except:
+            session.rollback()
+        finally:
+            session.close()
+        return res
 
 
 if __name__ == "__main__":
