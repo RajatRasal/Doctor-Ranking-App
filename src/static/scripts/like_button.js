@@ -8,6 +8,10 @@ class ParameterSelectionForm extends React.Component {
     this.params = props.params;
   }
 
+  back(event) {
+    fetchDiseases();
+  }
+
   render() {
     const diseaseListItems = this.params.map((pair, index) =>
       <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
@@ -20,14 +24,14 @@ class ParameterSelectionForm extends React.Component {
     return (
       <div className="container">
         <h1 className="mt-5">Select Parameters</h1>
-        <p className="lead">These are all the parameters present in our database. Parameters which have already been selected for a disease have already been ticked and assigned an importance value when they were input. You can select or remove the parameters below, and the importances associated with them, and this will be updated in the database when you click <span className="font-italic">next</span>. To add more parameters for a disease, click on the <span className="font-italic">Add/Update Diseases Info</span> tab.</p>
+        <p className="lead">These are all the parameters present in our database. Parameters which have already been selected for a disease have already been ticked and assigned an importance value when they were input. You can remove parameters by setting their importances to 0. All pre-selected or newly selected items are those with values. Any changes to the default will be updated in the database when you click <span className="bold font-italic">Next</span>. To add more parameters for a disease, click on the <span className="font-italic">Add/Update Diseases Info</span> tab.</p>
 	<ul className="list-group list-group-flush m-3">
           {diseaseListItems}
 	</ul>
-        <div className="row m-2">
+        <div className="row m-2 mt-4">
           <div className="col-2">
             <span className="float-left">
-              <button className="btn btn-outline-secondary">Back</button>
+              <button className="btn btn-outline-secondary" onClick={this.back}>Back</button>
 	    </span>
           </div>
           <div className="col-8 text-center">
@@ -118,6 +122,10 @@ function Loader(props) {
 }
 
 function fetchDiseases(error, error_message) {
+  ReactDOM.render(
+    <Loader/>,
+    domContainer
+  );
   fetch('/diseases')
     .then(response => {
       if (response.status != 200) {
@@ -191,10 +199,6 @@ function fetchParameters(disease) {
 
 $(document).ready(function() {
   console.log('Loaded page');
-  ReactDOM.render(
-    <Loader/>,
-    domContainer
-  );
   // fetchDiseases();
   fetchParameters('test disease 1');
 });
