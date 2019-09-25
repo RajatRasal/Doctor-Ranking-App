@@ -10,12 +10,36 @@ class ParameterSelectionForm extends React.Component {
 
   render() {
     const diseaseListItems = this.params.map((pair, index) =>
-      <li key={index}>{pair.importance} - {pair.parameter}</li>
+      <li key={index} className="list-group-item d-flex justify-content-between align-items-center">
+        {pair.parameter}
+        <span className="badge badge-primary badge-pill">
+          {pair.importance}
+        </span>
+      </li>
     );
     return (
-      <ul>
-        {diseaseListItems}
-      </ul>
+      <div className="container">
+        <h1 className="mt-5">Select Parameters</h1>
+        <p className="lead">These are all the parameters present in our database. Parameters which have already been selected for a disease have already been ticked and assigned an importance value when they were input. You can select or remove the parameters below, and the importances associated with them, and this will be updated in the database when you click <span className="font-italic">next</span>. To add more parameters for a disease, click on the <span className="font-italic">Add/Update Diseases Info</span> tab.</p>
+	<ul className="list-group list-group-flush m-3">
+          {diseaseListItems}
+	</ul>
+        <div className="row m-2">
+          <div className="col-2">
+            <span className="float-left">
+              <button className="btn btn-outline-secondary">Back</button>
+	    </span>
+          </div>
+          <div className="col-8 text-center">
+          </div>
+          <div className="col-2">
+            <span className="float-right">
+              <button className="btn btn-outline-secondary">Next</button>
+            </span>
+          </div>
+        </div>
+	<ErrorBar error={""} error_message={""}/>
+      </div>
     );
   }
 }
@@ -27,10 +51,6 @@ class DiseaseSelectionForm extends React.Component {
 	          error: props.error,
 	          error_message: props.error_message};
     this.diseases = props.diseases;
-    /*
-    this.error = props.error;
-    this.error_message = props.error_message;
-    */
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleOptionSelection = this.handleOptionSelection.bind(this);
   }
@@ -43,7 +63,6 @@ class DiseaseSelectionForm extends React.Component {
   handleSubmit() {
     console.log('The selected diseases is: ' + this.state.value);
     if (this.state.value == '') {
-      // Update a UI component to say please select an element
       console.log('Nothing is selected');
       this.setState({error: 'Input Error',
 	             error_message: 'nothing has been selected'});
@@ -150,6 +169,7 @@ function fetchParameters(disease) {
       response.json()
         .then(data => {
           console.log(data);
+          let sortedData = data.sort((a, b) => parseInt(b.importance) - parseInt(a.importance));
           // let x = JSON.parse(data);
           // console.log(typeof x);
           /* console.log(typeof x);
@@ -158,7 +178,7 @@ function fetchParameters(disease) {
             domContainer);
           */
           ReactDOM.render(
-            <ParameterSelectionForm params={data}/>,
+            <ParameterSelectionForm params={sortedData}/>,
             domContainer
           );
 	})
@@ -175,5 +195,6 @@ $(document).ready(function() {
     <Loader/>,
     domContainer
   );
-  fetchDiseases();
+  // fetchDiseases();
+  fetchParameters('test disease 1');
 });
