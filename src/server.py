@@ -1,7 +1,7 @@
 import os
 
 from flask import Flask, Blueprint, jsonify, current_app, render_template, \
-    make_response
+    make_response, abort
 
 try:
     from src.model.tables import PostgresDatabase
@@ -44,13 +44,13 @@ def index():
 
 
 @hcp_engine.route('/diseases', methods=['GET'])
-def diseases():
+def get_diseases():
     ranking_engine = current_app.config['hcp_rank_engine']
     all_diseases = ranking_engine.list_diseases()
     return jsonify({'diseases': all_diseases})
 
 @hcp_engine.route('/diseases/<disease>', methods=['POST'])
-def get_parameter_importance(disease):
+def get_and_post_parameter_importance(disease):
     print(disease)
     ranking_engine = current_app.config['hcp_rank_engine']
     param_importance = ranking_engine.list_parameters(disease)
@@ -66,8 +66,23 @@ def update_parameter_importance(disease):
 def get_doctors_count():
     ranking_engine = current_app.config['hcp_rank_engine']
     count = ranking_engine.count_doctors()
-    print(count)
     return jsonify({'count': count})
+
+@hcp_engine.route('/doctors/rank/<disease>/<int:top_limit>/<int:bottom_limit>', methods=['GET'])
+def get_doctors_rank(disease, top_limit, bottom_limit):
+    if top_limit <= 0 and bottom_limit <= 0:
+        abort(400, 'Top needs a limit > 0')
+
+    ranking_engine = current_app.config['hcp_rank_engine']
+    doctors = ranking_engine.rank_doctors(disease)
+    top = doctors[0:top_limit]
+    bottom = doctors[-bottom_limit:]
+
+    hcp_json_map = lambda pair: {'hcp_name': pair[0], 'score': pair[1]}
+    res = {'top': list(map(hcp_json_map, top)),
+           'bottom': list(map(hcp_json_map, bottom))}
+
+    return jsonify(res)
 
 
 if __name__ == "__main__":

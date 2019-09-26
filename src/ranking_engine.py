@@ -52,6 +52,9 @@ class HcpRankingEngine:
 
         return count
 
+    def rank_doctors(self, disease):
+        pass
+
 if __name__ == "__main__":
     from model.tables import PostgresDatabase
     from model.db_connection import get_db_connection
