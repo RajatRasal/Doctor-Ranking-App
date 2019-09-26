@@ -58,6 +58,17 @@ def get_parameter_importance(disease):
     print(res_json)
     return jsonify(res_json)
 
+@hcp_engine.route('/diseases/<disease>', methods=['PUT'])
+def update_parameter_importance(disease):
+    pass
+
+@hcp_engine.route('/doctors/count', methods=['GET'])
+def get_doctors_count():
+    ranking_engine = current_app.config['hcp_rank_engine']
+    count = ranking_engine.count_doctors()
+    print(count)
+    return jsonify({'count': count})
+
 
 if __name__ == "__main__":
     app = create_app()

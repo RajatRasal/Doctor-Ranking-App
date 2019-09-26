@@ -49,3 +49,17 @@ class TestFlaskServer:
 
         assert response.get_json() == [{'parameter': 'x', 'importance': 3},
                                        {'parameter': 'y', 'importance': 4}]
+
+    @mock.patch('src.ranking_engine.HcpRankingEngine.count_doctors')
+    def test_server_gets_list_of_diseases_and_returns_200(self, patch_engine,
+                                                          test_client):
+        patch_engine.return_value = 5 
+
+        response = test_client.get(f'/doctors/count')
+
+        assert response.status_code == 200
+        assert response.is_json
+
+        patch_engine.assert_called_once_with()
+
+        assert response.get_json() == {'count': 5}

@@ -16,14 +16,15 @@ class HcpRankingEngine:
 
     def __init__(self, db):
         self.db = db
+        self.engine = get_db_connection()
 
     def list_diseases(self):
         res = self.db.findall_records_in_table('diseases', 'type')
         return [row[0] for row in res]
 
     def list_parameters(self, disease):
-        engine = get_db_connection()
-        session = sessionmaker(bind=engine)()
+        session = sessionmaker(bind=self.engine)()
+        res = []
 
         try:
             current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -37,6 +38,19 @@ class HcpRankingEngine:
             session.close()
         return res
 
+    def count_doctors(self):
+        session = sessionmaker(bind=self.engine)()
+        count = 0
+
+        try:
+            query = 'select count(distinct hcp_number) from doctors'
+            count = session.execute(query).first()[0]
+        except:
+            session.rollback()
+        finally:
+            session.close()
+
+        return count
 
 if __name__ == "__main__":
     from model.tables import PostgresDatabase

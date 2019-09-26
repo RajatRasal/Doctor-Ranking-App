@@ -55,3 +55,10 @@ class TestRankingEngine:
                               ('open to meet', 5), ('publications', 3),
                               ('specialization', 3), ('volume of patients', 4)]
         assert res == params_for_disease
+
+    @pytest.mark.parametrize('engine', [PostgresDatabase])
+    def test_get_number_of_doctors(self, test_db_conn, engine):
+        db = engine(test_db_conn) 
+        ranking_engine = HcpRankingEngine(db)
+        res = ranking_engine.count_doctors()
+        assert res == 26
