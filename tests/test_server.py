@@ -135,9 +135,8 @@ class TestFlaskServer:
         assert not response.is_json
 
     @mock.patch('src.ranking_engine.HcpRankingEngine.rank_doctors')
-    def test_server_rank_doctors_bottom_lim_zero_still_return_top(self,
-                                                                  patch_engine,
-                                                                  test_client):
+    def test_server_rank_doctors_bottom_lim_zero(self, patch_engine,
+                                                 test_client):
         result = [('doctor 1', 10), ('doctor 2', 9), ('doctor 3', 8)]
         disease = 'test disease 1'
 
@@ -153,6 +152,7 @@ class TestFlaskServer:
         expected_res_top = [{'hcp_name': 'doctor 1', 'score': 10}]
 
         assert response.get_json()['top'] == expected_res_top
+        assert response.get_json()['bottom'] == []
 
     @mock.patch('src.ranking_engine.HcpRankingEngine.rank_doctors')
     def test_server_rank_doctors_zero_top_limit_return_empty_top_list(self,

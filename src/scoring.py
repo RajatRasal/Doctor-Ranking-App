@@ -64,14 +64,23 @@ def calculate_score_using_orm(db_conn, disease_name):
                   hcp_score_and_weights.c.weight_4_w4.desc(),
                   hcp_score_and_weights.c.weight_5_w5.desc())
 
-    res = session.execute(hcp_scores_sorted)
+    res = []
+
+    try:
+        res = session.execute(hcp_scores_sorted)
+    except:
+        session.rollback()
+    finally:
+        session.close()
+
     return [row[0:2] for row in res] 
+
 
 if __name__ == '__main__':
     sys.path.append(sys.path[0] + '/model')
     
     from model.db_connection import get_db_connection
-    db_conn = get_db_connection().connect()
+    db_conn = get_db_connection()
     disease_name = 'test disease 3'
     res = calculate_score_using_db(db_conn, disease_name)
     

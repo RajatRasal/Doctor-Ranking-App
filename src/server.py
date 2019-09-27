@@ -73,10 +73,12 @@ def get_doctors_rank(disease, top_limit, bottom_limit):
     if top_limit <= 0 and bottom_limit <= 0:
         abort(400, 'Top needs a limit > 0')
 
+    print(top_limit, bottom_limit)
+
     ranking_engine = current_app.config['hcp_rank_engine']
     doctors = ranking_engine.rank_doctors(disease)
     top = doctors[0:top_limit]
-    bottom = doctors[-bottom_limit:]
+    bottom = [] if bottom_limit == 0 else doctors[-bottom_limit:]
 
     hcp_json_map = lambda pair: {'hcp_name': pair[0], 'score': pair[1]}
     res = {'top': list(map(hcp_json_map, top)),

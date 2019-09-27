@@ -2,6 +2,84 @@
 
 const domContainer = document.querySelector('#engine');
 
+class DisplayDoctorRankings extends React.Component {
+  constructor(props) {
+    super(props);
+    this.doctors = props.doctors;
+    this.back = this.back.bind(this)
+  }
+
+  back(event) {
+    alert('This will take you directly back to disease selection.');
+    fetchDiseases(200, '');
+  }
+
+  render() {
+    const topDoctorsTableRows = this.doctors['top'].map((dict, index) =>
+      <tr key={index}>
+        <th scope="col">{index + 1}</th>
+        <td scope="col">{dict['hcp_name']}</td>
+        <td scope="col">{dict['score']}</td>
+      </tr>
+    );
+    const bottomDoctorsTableRows = this.doctors['bottom'].slice(0).reverse().map((dict, index) =>
+      <tr key={sessionStorage.getItem('count') - index}>
+        <th scope="col">{sessionStorage.getItem('count') - index}</th>
+        <td scope="col">{dict['hcp_name']}</td>
+        <td scope="col">{dict['score']}</td>
+      </tr>
+    );
+    return (
+      <div className="container">
+        <h1 className="mt-5">Doctor Ranking</h1>
+        <p className="lead">List of doctors from the top and bottom of the rankings based on the limits you selected on the previous page</p>
+        <h4 className="mt-3">Top Doctors</h4>
+        <table className="table">
+          <thead className="thead-light">
+            <tr>
+              <th scope="col">Rank</th>
+              <th scope="col">HCP Name</th>
+              <th scope="col">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {topDoctorsTableRows}
+          </tbody>
+        </table>
+        <hr className="divider"/>
+        <h4 className="mt-3">Bottom Doctors</h4>
+        <table className="table">
+          <thead className="thead-light">
+            <tr>
+              <th scope="col">Rank</th>
+              <th scope="col">HCP Name</th>
+              <th scope="col">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {bottomDoctorsTableRows}
+          </tbody>
+        </table>
+        <hr className="divider"/>
+        <div className="row m-2 mt-4">
+          <div className="col-2">
+            <span className="float-left">
+              <button className="btn btn-outline-secondary" onClick={this.back}>Back</button>
+	    </span>
+          </div>
+          <div className="col-8 text-center">
+          </div>
+          <div className="col-2">
+            <span className="float-right">
+              <button className="btn btn-outline-success" onClick={this.next}>Download CSV</button>
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
 class DoctorLimitSelection extends React.Component {
   constructor(props) {
     super(props);
@@ -39,6 +117,10 @@ class DoctorLimitSelection extends React.Component {
       this.setState({error: 200, error_message: error_message});
       return;
     }
+
+    let disease = sessionStorage.getItem('disease');
+
+    fetchRanking(disease, this.state.top, this.state.bottom);
     console.log('Submit');
   }
 
@@ -73,8 +155,8 @@ class DoctorLimitSelection extends React.Component {
             </div>
           </div>
         </div>
-        <div className="row m-2 mt-3">
-          <div className="col-2">
+        <div className="row m-2">
+	    <div className="col-2">
             <span className="float-left">
               <button className="btn btn-outline-secondary" onClick={this.back}>Back</button>
 	    </span>
@@ -87,7 +169,7 @@ class DoctorLimitSelection extends React.Component {
             </span>
           </div>
         </div>
-	<ErrorBar error={this.state.error} error_message={this.state.error_message}/>
+        <ErrorBar error={this.state.error} error_message={this.state.error_message}/>
       </div>
     );
   }
@@ -97,10 +179,16 @@ class ParameterSelectionForm extends React.Component {
   constructor(props) {
     super(props);
     this.params = props.params;
+    this.back = this.back.bind(this);
+    this.next = this.next.bind(this);
   }
 
   back(event) {
     fetchDiseases(200, '');
+  }
+
+  next(event) {
+    fetchDoctorLimitCriteria(200, '');
   }
 
   render() {
@@ -129,7 +217,7 @@ class ParameterSelectionForm extends React.Component {
           </div>
           <div className="col-2">
             <span className="float-right">
-              <button className="btn btn-outline-secondary">Next</button>
+              <button className="btn btn-outline-secondary" onClick={this.next}>Next</button>
             </span>
           </div>
         </div>
@@ -212,14 +300,14 @@ function ErrorBar(props) {
   console.log(props.error + ' ' + props.error_message);
   if (props.error != 200) {
     return (
-      <div className="mt-4 alert alert-danger">
+      <div className="mt-3 alert alert-danger">
         <strong>{props.error}</strong>: {props.error_message}
       </div>
     );
   }
   if (props.error_message != "OK" && props.error_message != "") {
     return (
-      <div className="mt-2 alert alert-warning">
+      <div className="mt-3 alert alert-warning">
         {props.error_message}
       </div>
     );
@@ -289,6 +377,7 @@ function fetchDiseases(error, error_message) {
 
 function fetchParameters(disease) {
   console.log('fetching parameters for disease...');
+  sessionStorage.setItem('disease', disease);
   ReactDOM.render(
     <Loader/>,
     domContainer
@@ -327,7 +416,7 @@ function fetchDoctorLimitCriteria() {
     domContainer
   );
   fetch('/doctors/count')
-    .then(response => { 
+    .then(response => {
       if (response.status != 200) {
         const error_message = response.statusText;
         const error_code = response.status;
@@ -336,18 +425,52 @@ function fetchDoctorLimitCriteria() {
         return;
       }
       response.json()
-        .then(data =>
+        .then(data => {
+          sessionStorage.setItem('count', data['count']);
           ReactDOM.render(
             <DoctorLimitSelection doctors={data['count']}/>,
             domContainer
           )
+       })
+    })
+}
+
+function fetchRanking(disease, top_limit, bottom_limit) {
+  console.log('fetching max number of doctors to select from...');
+  sessionStorage.setItem('upper_limit', top_limit);
+  sessionStorage.setItem('lower_limit', bottom_limit);
+  ReactDOM.render(
+    <Loader/>,
+    domContainer
+  );
+  fetch('/doctors/rank/' + disease + '/' + top_limit + '/' + bottom_limit)
+    .then(response => {
+      if (response.status != 200) {
+        const error_message = response.statusText;
+        const error_code = response.status;
+        alert('Server Error' + error_code + ': ' + error_message);
+        fetchDoctorLimitCriteria();
+        return;
+      }
+      response.json()
+        .then(data => {
+	console.log(data);
+          ReactDOM.render(
+            <DisplayDoctorRankings doctors={data}/>,
+            domContainer
+          )
+	}
 	)
     })
 }
 
 $(document).ready(function() {
   console.log('Loaded page');
-  // fetchDiseases(200, '');
+  fetchDiseases(200, '');
   // fetchParameters('test disease 1');
-  fetchDoctorLimitCriteria();
+  // fetchDoctorLimitCriteria();
+  // sessionStorage.setItem('upper_limit', 1);
+  // sessionStorage.setItem('lower_limit', 0);
+  // sessionStorage.setItem('count', 26);
+  // fetchRanking('test disease 1', 1, 0);
 });

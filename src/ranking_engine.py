@@ -8,8 +8,10 @@ from sqlalchemy.orm import sessionmaker
 
 try:
     from model.db_connection import get_db_connection
+    from scoring import calculate_score_using_orm
 except:
     from src.model.db_connection import get_db_connection
+    from src.scoring import calculate_score_using_orm
 
 
 class HcpRankingEngine:
@@ -19,8 +21,22 @@ class HcpRankingEngine:
         self.engine = get_db_connection()
 
     def list_diseases(self):
+        session = sessionmaker(bind=self.engine)()
+        res = []
+
+        try:
+            res = session.execute('select type from diseases').fetchall();
+        except:
+            session.rollback()
+        finally:
+            session.close()
+
+        return [row[0] for row in res]
+
+        """
         res = self.db.findall_records_in_table('diseases', 'type')
         return [row[0] for row in res]
+        """
 
     def list_parameters(self, disease):
         session = sessionmaker(bind=self.engine)()
@@ -53,7 +69,10 @@ class HcpRankingEngine:
         return count
 
     def rank_doctors(self, disease):
-        pass
+        res = []
+        res = calculate_score_using_orm(self.engine, disease)
+        return res
+
 
 if __name__ == "__main__":
     from model.tables import PostgresDatabase
