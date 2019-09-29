@@ -88,6 +88,6 @@ def get_doctors_rank(disease, top_limit, bottom_limit):
 
 
 if __name__ == "__main__":
-    app = create_app()
-    app.debug = True
-    app.run('0.0.0.0')
+    application = create_app()
+    application.debug = True
+    application.run('0.0.0.0')
