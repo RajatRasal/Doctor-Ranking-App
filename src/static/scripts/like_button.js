@@ -6,7 +6,6 @@ class DisplayDoctorRankings extends React.Component {
   constructor(props) {
     super(props);
     this.state = {downloadLink: "", url: "", download: ""};
-        <a style={{color: "red"}} href={this.state.url} download={this.state.download} id="download-link">xw</a>
     this.doctors = props.doctors;
     this.back = this.back.bind(this);
     this.downloadCsv = this.downloadCsv.bind(this);
