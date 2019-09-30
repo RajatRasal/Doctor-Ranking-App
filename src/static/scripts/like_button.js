@@ -506,11 +506,11 @@ function fetchRanking(disease, top_limit, bottom_limit) {
 
 $(document).ready(function() {
   console.log('Loaded page');
-  // fetchDiseases(200, '');
+  fetchDiseases(200, '');
   // fetchParameters('test disease 1');
   // fetchDoctorLimitCriteria();
-  sessionStorage.setItem('upper_limit', 1);
-  sessionStorage.setItem('lower_limit', 0);
+  // sessionStorage.setItem('upper_limit', 1);
+  // sessionStorage.setItem('lower_limit', 0);
   // sessionStorage.setItem('count', 26);
-  fetchRanking('test disease 1', 2, 3);
+  // fetchRanking('test disease 1', 2, 3);
 });
