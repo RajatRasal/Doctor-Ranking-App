@@ -5,13 +5,33 @@ const domContainer = document.querySelector('#engine');
 class DisplayDoctorRankings extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {downloadLink: "", url: "", download: ""};
+        <a style={{color: "red"}} href={this.state.url} download={this.state.download} id="download-link">xw</a>
     this.doctors = props.doctors;
-    this.back = this.back.bind(this)
+    this.back = this.back.bind(this);
+    this.downloadCsv = this.downloadCsv.bind(this);
   }
 
   back(event) {
     alert('This will take you directly back to disease selection.');
     fetchDiseases(200, '');
+  }
+
+  downloadCsv(event) {
+    console.log('Generating CSV');
+    let csv = 'Rank,HCP Name,Score\r\n';
+    this.doctors['top'].forEach((dict, index) => {
+      const row = (index + 1) + ',' + dict['hcp_name'] + ',' + dict['score'] + '\r\n';
+      csv += row;
+    });
+
+    console.log('Downloading CSV');
+    const blob = new Blob([csv]);
+    const url = window.URL.createObjectURL(blob);
+    const downloadLinkElem = document.getElementById('download-link');
+    downloadLinkElem.href = url;
+    downloadLinkElem.download = 'top_doctors.csv';
+    downloadLinkElem.click();
   }
 
   render() {
@@ -61,20 +81,21 @@ class DisplayDoctorRankings extends React.Component {
           </tbody>
         </table>
         <hr className="divider"/>
-        <div className="row m-2 mt-4">
+        <div className="row mt-4">
           <div className="col-2">
             <span className="float-left">
               <button className="btn btn-outline-secondary" onClick={this.back}>Back</button>
-	    </span>
+	        </span>
           </div>
           <div className="col-8 text-center">
           </div>
           <div className="col-2">
             <span className="float-right">
-              <button className="btn btn-outline-success" onClick={this.next}>Download CSV</button>
+              <button className="btn btn-outline-success" onClick={this.downloadCsv}>Download CSV</button>
             </span>
           </div>
         </div>
+        <a style={{color: "red"}} target="_blank" href={this.state.url} download={this.state.download} id="download-link">xw</a>
       </div>
     );
   }
@@ -120,6 +141,8 @@ class DoctorLimitSelection extends React.Component {
 
     let disease = sessionStorage.getItem('disease');
 
+    console.log('Bottom: ' + this.state.bottom);
+    console.log('Top: ' + this.state.top);
     fetchRanking(disease, this.state.top, this.state.bottom);
     console.log('Submit');
   }
@@ -466,11 +489,11 @@ function fetchRanking(disease, top_limit, bottom_limit) {
 
 $(document).ready(function() {
   console.log('Loaded page');
-  fetchDiseases(200, '');
+  // fetchDiseases(200, '');
   // fetchParameters('test disease 1');
   // fetchDoctorLimitCriteria();
   // sessionStorage.setItem('upper_limit', 1);
   // sessionStorage.setItem('lower_limit', 0);
   // sessionStorage.setItem('count', 26);
-  // fetchRanking('test disease 1', 1, 0);
+  fetchRanking('test disease 1', 2, 3);
 });
