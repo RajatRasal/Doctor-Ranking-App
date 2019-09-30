@@ -12,8 +12,7 @@ class DisplayDoctorRankings extends React.Component {
   }
 
   back(event) {
-    alert('This will take you directly back to disease selection.');
-    fetchDiseases(200, '');
+    fetchDoctorLimitCriteria(200, '');
   }
 
   downloadCsv(event) {
@@ -130,8 +129,8 @@ class DoctorLimitSelection extends React.Component {
   }
 
   back(event) {
-    alert('This will take you directly back to disease selection.');
-    fetchDiseases(200, '');
+    let disease = sessionStorage.getItem('disease');
+    fetchParameters(disease);
   }
 
   next(event) {
@@ -461,7 +460,8 @@ function fetchDoctorLimitCriteria() {
         const error_message = response.statusText;
         const error_code = response.status;
         console.log('Server Error' + error_code + ': ' + error_message);
-        fetchParameters('Server error', error_code + ' ' + error_message);
+        let disease = sessionStorage.getItem('disease');
+        fetchParameters(disease);
         return;
       }
       response.json()
@@ -509,8 +509,8 @@ $(document).ready(function() {
   // fetchDiseases(200, '');
   // fetchParameters('test disease 1');
   // fetchDoctorLimitCriteria();
-  // sessionStorage.setItem('upper_limit', 1);
-  // sessionStorage.setItem('lower_limit', 0);
+  sessionStorage.setItem('upper_limit', 1);
+  sessionStorage.setItem('lower_limit', 0);
   // sessionStorage.setItem('count', 26);
   fetchRanking('test disease 1', 2, 3);
 });
