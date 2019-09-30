@@ -18,19 +18,36 @@ class DisplayDoctorRankings extends React.Component {
   }
 
   downloadCsv(event) {
-    console.log('Generating CSV');
-    let csv = 'Rank,HCP Name,Score\r\n';
+    const downloadLinkElem = document.getElementById('download-link');
+
+    console.log('Generating Top Doctors CSV');
+    let topDoctorsCsv = 'Rank,HCP Name,Score\r\n';
     this.doctors['top'].forEach((dict, index) => {
       const row = (index + 1) + ',' + dict['hcp_name'] + ',' + dict['score'] + '\r\n';
-      csv += row;
+      topDoctorsCsv += row;
     });
 
-    console.log('Downloading CSV');
-    const blob = new Blob([csv]);
-    const url = window.URL.createObjectURL(blob);
-    const downloadLinkElem = document.getElementById('download-link');
+    console.log('Downloading Top Doctors CSV');
+    let blob = new Blob([topDoctorsCsv]);
+    let url = window.URL.createObjectURL(blob);
     downloadLinkElem.href = url;
     downloadLinkElem.download = 'top_doctors.csv';
+    downloadLinkElem.click();
+
+    console.log('Generating Bottom Doctors CSV');
+    let bottomDoctorsCsv = 'Rank,HCP Name,Score\r\n';
+    const indexOffset = sessionStorage.getItem('count') - this.doctors['bottom'].length + 1;
+    this.doctors['bottom'].forEach((dict, index) => {
+      const rowIndex = indexOffset + index;
+      const row = rowIndex + ',' + dict['hcp_name'] + ',' + dict['score'] + '\r\n';
+      bottomDoctorsCsv += row;
+    });
+
+    console.log('Downloading Bottom Doctors CSV');
+    blob = new Blob([bottomDoctorsCsv]);
+    url = window.URL.createObjectURL(blob);
+    downloadLinkElem.href = url;
+    downloadLinkElem.download = 'bottom_doctors.csv';
     downloadLinkElem.click();
   }
 
@@ -42,9 +59,10 @@ class DisplayDoctorRankings extends React.Component {
         <td scope="col">{dict['score']}</td>
       </tr>
     );
-    const bottomDoctorsTableRows = this.doctors['bottom'].slice(0).reverse().map((dict, index) =>
-      <tr key={sessionStorage.getItem('count') - index}>
-        <th scope="col">{sessionStorage.getItem('count') - index}</th>
+    const indexOffset = sessionStorage.getItem('count') - this.doctors['bottom'].length + 1;
+    const bottomDoctorsTableRows = this.doctors['bottom'].map((dict, index) =>
+      <tr key={indexOffset + index}>
+        <th scope="col">{indexOffset + index}</th>
         <td scope="col">{dict['hcp_name']}</td>
         <td scope="col">{dict['score']}</td>
       </tr>
@@ -95,7 +113,7 @@ class DisplayDoctorRankings extends React.Component {
             </span>
           </div>
         </div>
-        <a style={{color: "red"}} target="_blank" href={this.state.url} download={this.state.download} id="download-link">xw</a>
+        <a style={{display: "none"}} target="_blank" href={this.state.url} download={this.state.download} id="download-link">xw</a>
       </div>
     );
   }
