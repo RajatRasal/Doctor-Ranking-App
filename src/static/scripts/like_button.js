@@ -354,6 +354,7 @@ class DiseaseSelectionForm extends React.Component {
 class UploadDiseaseCsv extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {error: props.error, error_message: props.error_message};
     this.upload = this.upload.bind(this);
   }
 
@@ -364,6 +365,7 @@ class UploadDiseaseCsv extends React.Component {
       uploadDiseaseFile(file);
     } else {
       console.log('Update Error message');
+      this.setState({error: 200, error_message: "No file choosen"}); 
     }
     return; 
   }
@@ -442,11 +444,90 @@ class UploadDiseaseCsv extends React.Component {
             </span>
           </div>
         </div>
+	<ErrorBar error={this.state.error} error_message={this.state.error_message}/>
     </div>
   );
   }
 }
 
+class UploadDoctorsCsv extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {error: props.error, error_message: props.error_message};
+    this.upload = this.upload.bind(this);
+  }
+
+  upload() {
+    const files = document.getElementById("uploadDoctorFile");
+    if (files.files && files.files.length == 1) {
+      const file = files.files[0]
+      uploadDiseaseFile(file);
+    } else {
+      console.log('Update Error message');
+      this.setState({error: 200, error_message: "No file choosen"}); 
+    }
+    return; 
+  }
+
+  render() {
+  return (
+    <div>
+      <h2 className="mt-5">Upload Doctors Data file</h2>
+      <p className="lead">Select a file containing info about doctors and their weightage factors, which will be factored into out algorithm when ranking doctors for a particular disease. The file should be in <code>csv</code> format and be structured as follows:</p>
+      <div className="row m-2">
+	  <table className="table table-bordered">
+	    <thead>
+	      <tr>
+	        <th scope="col">Doctor Name</th>
+	        <th scope="col">Wt.1</th>
+	        <th scope="col">Wt.2</th>
+	        <th scope="col">Wt.3</th>
+	        <th scope="col">Wt.4</th>
+	        <th scope="col">Wt.5</th>
+	      </tr>
+	    </thead>
+	    <tbody>
+	      <tr>
+	        <th scope="row">Disease 1</th>
+	        <td>1</td>
+	        <td>2</td>
+	        <td>4</td>
+	        <td>5</td>
+	        <td>3</td>
+	      </tr>
+	      <tr>
+	        <th scope="row">Disease 1</th>
+	        <td>5</td>
+	        <td>3</td>
+	        <td>1</td>
+	        <td>2</td>
+	        <td>2</td>
+	      </tr>
+	    </tbody>
+	  </table>
+      </div>
+	  <div className="row m-3">
+            <input type="file" className="form-control-file" id="uploadDoctorFile"/>
+          </div>
+        <div className="row m-2">
+          <div className="col-2">
+            <span className="float-left">
+              <button className="btn btn-outline-secondary" onClick={() => displayHomepage()}>Back</button>
+	    </span>
+          </div>
+          <div className="col-8 text-center">
+          </div>
+          <div className="col-2">
+            <span className="float-right">
+              <button className="btn btn-outline-success" onClick={this.upload}>Upload CSV</button>
+            </span>
+          </div>
+        </div>
+	<ErrorBar error={this.state.error} error_message={this.state.error_message}/>
+    </div>
+  );
+  }
+}
 
 function ErrorBar(props) {
   console.log(props.error + ' ' + props.error_message);
@@ -483,8 +564,8 @@ function Homepage(props) {
       <h1 className="mt-5" align="center">HCP Ranking Engine</h1> 
       <div className="mt-2 mb-2">
       <button type="button" className="btn btn-outline-secondary btn-lg btn-block" onClick={() => fetchDiseases(200, '')}>Rank Doctors</button>
-      <button type="button" className="btn btn-outline-secondary btn-lg btn-block" onClick={() => displayUploadDiseaseFile()}>Add/Update Disease Info</button>
-      <button type="button" className="btn btn-outline-secondary btn-lg btn-block" onClick={() => submitUpdatedDoctors()}>Add/Update Doctors Info</button>
+      <button type="button" className="btn btn-outline-secondary btn-lg btn-block" onClick={() => displayUploadDiseaseFile(200, '')}>Add/Update Disease Info</button>
+      <button type="button" className="btn btn-outline-secondary btn-lg btn-block" onClick={() => displayUploadDoctorFile(200, '')}>Add/Update Doctors Info</button>
     </div>
     </div>
   );
@@ -635,13 +716,14 @@ function uploadDiseaseFile(file) {
     <Loader/>,
     domContainer
   );
-  fetch('/upload/diseases/', {
-    headers: {'Content-Type': 'text/plain; charset=utf-8'},
+  fetch('/diseases/upload', {
+    headers: {"Content-Type": "text/csv; charset=utf-8"},
     method: 'POST',
     body: file})
     .then(response => {
+      console.log('HERE');
       if (!response.ok) {
-        alert('Disease file upload: ' + code);
+        alert('Disease file upload: ' + response.status);
         ReactDOM.render(<UploadDiseaseCsv/>, domContainer);
         return;
       }
@@ -655,9 +737,25 @@ function uploadDiseaseFile(file) {
     });
 }
 
-function displayUploadDiseaseFile() {
+function displayUploadDiseaseFile(error, error_message) {
   ReactDOM.render(
-    <UploadDiseaseCsv/>,
+    <Loader/>,
+    domContainer
+  );
+  ReactDOM.render(
+    <UploadDiseaseCsv error={error} error_message={error_message}/>,
+    domContainer
+  );
+}
+
+function displayUploadDoctorFile(error, error_message) {
+  ReactDOM.render(
+    <Loader/>,
+    domContainer
+  );
+  console.log('ERRORS:' + error, + ' ' + error_message);
+  ReactDOM.render(
+    <UploadDoctorsCsv error={error} error_message={error_message}/>,
     domContainer
   );
 }
@@ -678,8 +776,8 @@ function displayHomepage() {
 
 $(document).ready(function() {
   console.log('Loaded page');
-  // displayHomepage();
-  displayUploadDiseaseFile();
+  displayHomepage();
+  // displayUploadDiseaseFile();
   // fetchDiseases(200, '');
   // fetchParameters('test disease 1');
   // fetchDoctorLimitCriteria();
