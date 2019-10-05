@@ -351,6 +351,103 @@ class DiseaseSelectionForm extends React.Component {
   }
 }
 
+class UploadDiseaseCsv extends React.Component {
+  constructor(props) {
+    super(props);
+    this.upload = this.upload.bind(this);
+  }
+
+  upload() {
+    const files = document.getElementById("uploadDiseasesFile");
+    if (files.files && files.files.length == 1) {
+      const file = files.files[0]
+      uploadDiseaseFile(file);
+    } else {
+      console.log('Update Error message');
+    }
+    return; 
+  }
+
+  render() {
+  return (
+    <div>
+      <h2 className="mt-5">Upload Disease Data file</h2>
+      <p className="lead">Select a file containing info about a type of disease and the key parameters which a doctor should be ranked by when consider this disease. The file should be in <code>csv</code> format and be structured as follows:</p>
+      <div className="row m-2">
+	  <table className="table table-bordered">
+	    <thead>
+	      <tr>
+	        <th scope="col">Disease Name</th>
+	        <th scope="col">P1</th>
+	        <th scope="col">P1 Weight</th>
+	        <th scope="col">...</th>
+	        <th scope="col">P4</th>
+	        <th scope="col">P4 Weight</th>
+	        <th scope="col">...</th>
+	        <th scope="col">PN</th>
+	        <th scope="col">PN Weight</th>
+	      </tr>
+	    </thead>
+	    <tbody>
+	      <tr>
+	        <th scope="row">Disease 1</th>
+	        <td>Specialization</td>
+	        <td>1</td>
+	        <td>...</td>
+	        <td>Distance</td>
+	        <td>5</td>
+	        <td>...</td>
+	        <td>Hospital</td>
+	        <td>4</td>
+	      </tr>
+	      <tr>
+	        <th scope="row">Disease 2</th>
+	        <td>Distance</td>
+	        <td>5</td>
+	        <td>...</td>
+	        <td><i>Empty</i></td>
+	        <td><i>Empty</i></td>
+	        <td>...</td>
+	        <td><i>Empty</i></td>
+	        <td><i>Empty</i></td>
+	      </tr>
+	      <tr>
+	        <th scope="row">Disease 3</th>
+	        <td>Volume of Patients</td>
+	        <td>3</td>
+	        <td>...</td>
+	        <td>Publication</td>
+	        <td>2</td>
+	        <td>...</td>
+	        <td><i>Empty</i></td>
+	        <td><i>Empty</i></td>
+	      </tr>
+	    </tbody>
+	  </table>
+      </div>
+	  <div className="row m-3">
+            <input type="file" className="form-control-file" id="uploadDiseasesFile"/>
+          </div>
+        <div className="row m-2">
+          <div className="col-2">
+            <span className="float-left">
+              <button className="btn btn-outline-secondary" onClick={() => displayHomepage()}>Back</button>
+	    </span>
+          </div>
+          <div className="col-8 text-center">
+          </div>
+          <div className="col-2">
+            <span className="float-right">
+              <button className="btn btn-outline-success" onClick={this.upload}>Upload CSV</button>
+            </span>
+          </div>
+        </div>
+    </div>
+  );
+  }
+}
+
+
 function ErrorBar(props) {
   console.log(props.error + ' ' + props.error_message);
   if (props.error != 200) {
@@ -386,7 +483,7 @@ function Homepage(props) {
       <h1 className="mt-5" align="center">HCP Ranking Engine</h1> 
       <div className="mt-2 mb-2">
       <button type="button" className="btn btn-outline-secondary btn-lg btn-block" onClick={() => fetchDiseases(200, '')}>Rank Doctors</button>
-      <button type="button" className="btn btn-outline-secondary btn-lg btn-block" onClick={() => submitUpdatedDoctors()}>Add/Update Disease Info</button>
+      <button type="button" className="btn btn-outline-secondary btn-lg btn-block" onClick={() => displayUploadDiseaseFile()}>Add/Update Disease Info</button>
       <button type="button" className="btn btn-outline-secondary btn-lg btn-block" onClick={() => submitUpdatedDoctors()}>Add/Update Doctors Info</button>
     </div>
     </div>
@@ -523,22 +620,55 @@ function fetchRanking(disease, top_limit, bottom_limit) {
       }
       response.json()
         .then(data => {
-	console.log(data);
+	  console.log(data);
           ReactDOM.render(
             <DisplayDoctorRankings doctors={data}/>,
             domContainer
-          )
-	}
-	)
-    })
+          );
+	});
+      }
+    );
 }
 
-function displayHomepage() {
+function uploadDiseaseFile(file) {
   ReactDOM.render(
     <Loader/>,
     domContainer
   );
+  fetch('/upload/diseases/', {
+    headers: {'Content-Type': 'text/plain; charset=utf-8'},
+    method: 'POST',
+    body: file})
+    .then(response => {
+      if (!response.ok) {
+        alert('Disease file upload: ' + code);
+        ReactDOM.render(<UploadDiseaseCsv/>, domContainer);
+        return;
+      }
+      alert('Changes successful!');
+      displayHomepage()
+    })
+    .catch(error => {
+      console.log('Disease file upload error: ' + error);
+      // Add error message to upload disease csv form
+      ReactDOM.render(<UploadDiseaseCsv/>, domContainer);
+    });
+}
+
+function displayUploadDiseaseFile() {
+  ReactDOM.render(
+    <UploadDiseaseCsv/>,
+    domContainer
+  );
+}
+
+function displayHomepage() {
   console.log('Loading homepage...');
+  ReactDOM.render(
+    <Loader/>,
+    domContainer
+  );
+  console.log('Displaying homepage...');
   ReactDOM.render(
     <Homepage/>,
     domContainer
@@ -548,7 +678,8 @@ function displayHomepage() {
 
 $(document).ready(function() {
   console.log('Loaded page');
-  displayHomepage();
+  // displayHomepage();
+  displayUploadDiseaseFile();
   // fetchDiseases(200, '');
   // fetchParameters('test disease 1');
   // fetchDoctorLimitCriteria();
