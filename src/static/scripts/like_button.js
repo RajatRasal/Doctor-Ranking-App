@@ -67,7 +67,7 @@ class DisplayDoctorRankings extends React.Component {
     );
     return (
       <div className="container">
-        <h1 className="mt-5">Doctor Ranking</h1>
+        <h2 className="mt-5">Doctor Ranking</h2>
         <p className="lead">List of doctors from the top and bottom of the rankings based on the limits you selected on the previous page</p>
         <h4 className="mt-3">Top Doctors</h4>
         <table className="table">
@@ -111,7 +111,7 @@ class DisplayDoctorRankings extends React.Component {
             </span>
           </div>
         </div>
-        <a style={{display: "none"}} target="_blank" href={this.state.url} download={this.state.download} id="download-link">xw</a>
+        <a style={{display: "none"}} target="_blank" href={this.state.url} download={this.state.download} id="download-link">Download Doctor Rankings</a>
       </div>
     );
   }
@@ -174,7 +174,7 @@ class DoctorLimitSelection extends React.Component {
   render() {
     return (
       <div className="container">
-        <h1 className="mt-5">Select Doctors</h1>
+        <h2 className="mt-5">Select Doctors</h2>
         <p className="lead">Select which doctors to target for your marketing scheme. You can pick from the top ranked doctors or bottom ranked for the specified disease, i.e. Top 5 and Bottom 3, means you will be able to see the top 5 ranked and bottom 3 ranked doctors. <b>The limit is {this.maxDoctors}</b>.</p>
         <div className="row m-3">
 	  <div className="col-sm-6 mt-2 mb-3">
@@ -241,7 +241,7 @@ class ParameterSelectionForm extends React.Component {
     );
     return (
       <div className="container">
-        <h1 className="mt-5">Select Parameters</h1>
+        <h2 className="mt-5">Select Parameters</h2>
         <p className="lead">These are all the parameters present in our database. Parameters which have already been selected for a disease have already been ticked and assigned an importance value when they were input. You can remove parameters by setting their importances to 0. All selected parameters are indicated by them having a value. Any change made below, will be updated in the database and set as the default parameter-importance values for this disease when you click <span className="bold font-italic">Next</span>. To add more parameters for a disease, click on the <span className="font-italic">Add/Update Diseases Info</span> tab.</p>
 	<ul className="list-group list-group-flush m-3">
           {diseaseListItems}
@@ -273,6 +273,7 @@ class DiseaseSelectionForm extends React.Component {
 	          error: props.error,
 	          error_message: props.error_message};
     this.diseases = props.diseases;
+    this.backToHomepage = this.backToHomepage.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleOptionSelection = this.handleOptionSelection.bind(this);
   }
@@ -280,6 +281,10 @@ class DiseaseSelectionForm extends React.Component {
   handleOptionSelection(event) {
     console.log(event.target.value);
     this.setState({value: event.target.value});
+  }
+
+  backToHomepage() {
+    displayHomepage();
   }
 
   handleSubmit() {
@@ -318,17 +323,28 @@ class DiseaseSelectionForm extends React.Component {
     console.log(diseaseListItems);
     return (
       <div>
-        <h1 className="mt-5">Select Disease</h1>
+        <h2 className="mt-5">Select Disease</h2> 
         <p className="lead">These are all the diseases present in the database. To add more, click on the <span className="font-italic">Add/Update Diseases Info</span> tab.</p>
-	<div className="input-group">
+	<div className="row m-1">
           <select className="custom-select" onChange={this.handleOptionSelection}>
             <option value="">Choose...</option>
             {diseaseListItems}
           </select>
-          <div className="input-group-append">
-            <button className="btn btn-outline-secondary" onClick={this.handleSubmit}>Next</button>
-          </div>
 	</div>
+        <div className="row mt-4">
+          <div className="col-2">
+            <span className="float-left">
+              <button className="btn btn-outline-secondary" onClick={this.backToHomepage}>Back</button>
+	    </span>
+          </div>
+          <div className="col-8 text-center">
+          </div>
+          <div className="col-2">
+            <span className="float-right">
+              <button className="btn btn-outline-secondary" onClick={this.handleSubmit}>Next</button>
+            </span>
+          </div>
+        </div>
 	<ErrorBar error={this.state.error} error_message={this.state.error_message}/>
       </div>
     );
@@ -360,6 +376,19 @@ function Loader(props) {
       <div className="spinner-border spinner-border-lg" style={{width: '5rem', height: '5rem'}} role="status">
         <span className="sr-only">Loading...</span>
       </div>
+    </div>
+  );
+}
+
+function Homepage(props) {
+  return (
+    <div>
+      <h1 className="mt-5" align="center">HCP Ranking Engine</h1> 
+      <div className="mt-2 mb-2">
+      <button type="button" className="btn btn-outline-secondary btn-lg btn-block" onClick={() => fetchDiseases(200, '')}>Rank Doctors</button>
+      <button type="button" className="btn btn-outline-secondary btn-lg btn-block" onClick={() => submitUpdatedDoctors()}>Add/Update Disease Info</button>
+      <button type="button" className="btn btn-outline-secondary btn-lg btn-block" onClick={() => submitUpdatedDoctors()}>Add/Update Doctors Info</button>
+    </div>
     </div>
   );
 }
@@ -504,9 +533,23 @@ function fetchRanking(disease, top_limit, bottom_limit) {
     })
 }
 
+function displayHomepage() {
+  ReactDOM.render(
+    <Loader/>,
+    domContainer
+  );
+  console.log('Loading homepage...');
+  ReactDOM.render(
+    <Homepage/>,
+    domContainer
+  );
+}
+
+
 $(document).ready(function() {
   console.log('Loaded page');
-  fetchDiseases(200, '');
+  displayHomepage();
+  // fetchDiseases(200, '');
   // fetchParameters('test disease 1');
   // fetchDoctorLimitCriteria();
   // sessionStorage.setItem('upper_limit', 1);
